@@ -13,39 +13,16 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
   :root {
-    --bg: #0a0e14;
-    --bg-1: #0f1419;
-    --bg-2: #151b23;
-    --border: #1f2937;
-    --border-2: #2a3441;
-    --text: #e6e8eb;
-    --dim: #6b7785;
-    --muted: #94a3b8;
-    --amber: #ffb000;
-    --amber-dim: #b87a00;
-    --green: #00d68f;
-    --red: #ff4757;
-    --blue: #4d9fff;
+    --bg: #0a0e14; --bg-1: #0f1419; --bg-2: #151b23;
+    --border: #1f2937; --border-2: #2a3441;
+    --text: #e6e8eb; --dim: #6b7785; --muted: #94a3b8;
+    --amber: #ffb000; --amber-dim: #b87a00;
+    --green: #00d68f; --red: #ff4757; --blue: #4d9fff;
     --grid: rgba(255, 176, 0, 0.04);
   }
   * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-  html, body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'IBM Plex Mono', monospace;
-    margin: 0;
-    overflow-x: hidden;
-  }
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background-image:
-      linear-gradient(var(--grid) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
+  html, body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Mono', monospace; margin: 0; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
   .mono { font-family: 'IBM Plex Mono', monospace; }
   .num { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
   @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
@@ -56,6 +33,8 @@
   .flicker { animation: flicker-in 0.8s ease-out; }
   @keyframes slide-in-right { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   .slide-in { animation: slide-in-right 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+  @keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { animation: fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg-1); }
   ::-webkit-scrollbar-thumb { background: var(--border-2); }
@@ -70,66 +49,103 @@
   .health-bar-fill { height: 100%; transition: width 600ms cubic-bezier(0.22, 1, 0.36, 1); }
   .blink { animation: blink 1.2s steps(2) infinite; }
   @keyframes blink { 50% { opacity: 0.3; } }
+  .scan-line {
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(180deg, transparent 0%, rgba(255, 176, 0, 0.03) 50%, transparent 100%);
+    background-size: 100% 8px;
+    opacity: 0.5;
+  }
+  @keyframes scan { 0% { background-position: 0 0; } 100% { background-position: 0 100vh; } }
+  .scan-anim { animation: scan 8s linear infinite; }
+  input.term {
+    background: transparent; border: none; outline: none;
+    font-family: 'IBM Plex Mono', monospace; color: var(--amber);
+    letter-spacing: 0.3em; font-size: 14px; text-align: center;
+    caret-color: var(--amber);
+  }
 </style>
 </head>
 <body>
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useEffect, useMemo } = React;
+const { useState, useEffect, useMemo, useRef } = React;
 
+// =================== DATA ===================
 const FLEET = [
-  { id: 'VTX-0001', type: 'Excavator', make: 'Caterpillar', model: '320', year: 2019, hours: 4820, vin: null, serial: 'CAT0320LC123456', originalCost: 285000, location: 'Tampa, FL', borrower: 'Sunshine Construction LLC', loanBalance: 142000, originAdvance: 199500 },
-  { id: 'VTX-0002', type: 'Skid Steer', make: 'Bobcat', model: 'S650', year: 2020, hours: 2940, vin: null, serial: 'BCT650S987654', originalCost: 58000, location: 'Orlando, FL', borrower: 'Citrus Grading Co', loanBalance: 28500, originAdvance: 40600 },
-  { id: 'VTX-0003', type: 'Truck', make: 'Ford', model: 'F-550', year: 2021, hours: null, vin: '1FDUF5HT5MEC12345', serial: null, originalCost: 72000, location: 'Jacksonville, FL', borrower: 'Atlantic Hauling', loanBalance: 38000, originAdvance: 50400 },
-  { id: 'VTX-0004', type: 'Bulldozer', make: 'John Deere', model: '850K', year: 2017, hours: 7820, vin: null, serial: 'JD850K442211', originalCost: 410000, location: 'Miami, FL', borrower: 'Everglades Earthworks', loanBalance: 184000, originAdvance: 287000 },
-  { id: 'VTX-0005', type: 'Wheel Loader', make: 'Komatsu', model: 'WA320', year: 2018, hours: 6210, vin: null, serial: 'KMT320WA88991', originalCost: 245000, location: 'Tampa, FL', borrower: 'Gulf Coast Materials', loanBalance: 89000, originAdvance: 171500 },
-  { id: 'VTX-0006', type: 'Truck', make: 'Freightliner', model: 'M2 106', year: 2022, hours: null, vin: '1FVACWDT5NHNG1234', serial: null, originalCost: 128000, location: 'Pensacola, FL', borrower: 'Panhandle Logistics', loanBalance: 91000, originAdvance: 89600 },
-  { id: 'VTX-0007', type: 'Excavator', make: 'Komatsu', model: 'PC210', year: 2016, hours: 9140, vin: null, serial: 'KMTPC210556677', originalCost: 198000, location: 'Fort Myers, FL', borrower: 'SW Florida Site Prep', loanBalance: 42000, originAdvance: 138600 },
-  { id: 'VTX-0008', type: 'Skid Steer', make: 'Caterpillar', model: '262D', year: 2021, hours: 1840, vin: null, serial: 'CAT262D778899', originalCost: 64000, location: 'Tampa, FL', borrower: 'Bay Area Demolition', loanBalance: 41000, originAdvance: 44800 },
-  { id: 'VTX-0009', type: 'Crane', make: 'Grove', model: 'RT540E', year: 2015, hours: 5680, vin: null, serial: 'GRV540E112233', originalCost: 380000, location: 'Tampa, FL', borrower: 'Skyline Crane Services', loanBalance: 95000, originAdvance: 266000 },
-  { id: 'VTX-0010', type: 'Truck', make: 'Peterbilt', model: '579', year: 2020, hours: null, vin: '1XPBDP9X8LD123456', serial: null, originalCost: 165000, location: 'Lakeland, FL', borrower: 'Central FL Trucking', loanBalance: 82000, originAdvance: 115500 },
-  { id: 'VTX-0011', type: 'Forklift', make: 'Toyota', model: '8FGU25', year: 2019, hours: 3240, vin: null, serial: 'TOY8FGU25445566', originalCost: 32000, location: 'Orlando, FL', borrower: 'Theme Park Logistics', loanBalance: 11500, originAdvance: 22400 },
-  { id: 'VTX-0012', type: 'Bulldozer', make: 'Caterpillar', model: 'D6T', year: 2014, hours: 11200, vin: null, serial: 'CATD6T990011', originalCost: 380000, location: 'Naples, FL', borrower: 'Collier Land Clearing', loanBalance: 28000, originAdvance: 266000 },
-  { id: 'VTX-0013', type: 'Wheel Loader', make: 'Volvo', model: 'L90H', year: 2020, hours: 3120, vin: null, serial: 'VLVL90H334455', originalCost: 220000, location: 'Tampa, FL', borrower: 'Tampa Bay Aggregates', loanBalance: 118000, originAdvance: 154000 },
-  { id: 'VTX-0014', type: 'Excavator', make: 'Hitachi', model: 'ZX350', year: 2018, hours: 6840, vin: null, serial: 'HIT350ZX667788', originalCost: 295000, location: 'Daytona Beach, FL', borrower: 'East Coast Excavation', loanBalance: 79000, originAdvance: 206500 },
-  { id: 'VTX-0015', type: 'Truck', make: 'Kenworth', model: 'T880', year: 2019, hours: null, vin: '1XKZD49X9KJ987654', serial: null, originalCost: 142000, location: 'Tallahassee, FL', borrower: 'Capital City Hauling', loanBalance: 46000, originAdvance: 99400 },
+  { id: 'VTX-0001', type: 'Excavator', make: 'Caterpillar', model: '320', year: 2019, hours: 4820, vin: null, serial: 'CAT0320LC123456', originalCost: 285000, location: 'Tampa, FL', borrower: 'Sunshine Construction LLC', loanBalance: 142000, originAdvance: 199500, lender: 'First FL Equipment Finance' },
+  { id: 'VTX-0002', type: 'Skid Steer', make: 'Bobcat', model: 'S650', year: 2020, hours: 2940, vin: null, serial: 'BCT650S987654', originalCost: 58000, location: 'Orlando, FL', borrower: 'Citrus Grading Co', loanBalance: 28500, originAdvance: 40600, lender: 'Citizens Bank Equipment' },
+  { id: 'VTX-0003', type: 'Truck', make: 'Ford', model: 'F-550', year: 2021, hours: null, vin: '1FDUF5HT5MEC12345', serial: null, originalCost: 72000, location: 'Jacksonville, FL', borrower: 'Atlantic Hauling', loanBalance: 38000, originAdvance: 50400, lender: 'First FL Equipment Finance' },
+  { id: 'VTX-0004', type: 'Bulldozer', make: 'John Deere', model: '850K', year: 2017, hours: 7820, vin: null, serial: 'JD850K442211', originalCost: 410000, location: 'Miami, FL', borrower: 'Everglades Earthworks', loanBalance: 184000, originAdvance: 287000, lender: 'SE Capital Partners' },
+  { id: 'VTX-0005', type: 'Wheel Loader', make: 'Komatsu', model: 'WA320', year: 2018, hours: 6210, vin: null, serial: 'KMT320WA88991', originalCost: 245000, location: 'Tampa, FL', borrower: 'Gulf Coast Materials', loanBalance: 89000, originAdvance: 171500, lender: 'First FL Equipment Finance' },
+  { id: 'VTX-0006', type: 'Truck', make: 'Freightliner', model: 'M2 106', year: 2022, hours: null, vin: '1FVACWDT5NHNG1234', serial: null, originalCost: 128000, location: 'Pensacola, FL', borrower: 'Panhandle Logistics', loanBalance: 91000, originAdvance: 89600, lender: 'Citizens Bank Equipment' },
+  { id: 'VTX-0007', type: 'Excavator', make: 'Komatsu', model: 'PC210', year: 2016, hours: 9140, vin: null, serial: 'KMTPC210556677', originalCost: 198000, location: 'Fort Myers, FL', borrower: 'SW Florida Site Prep', loanBalance: 42000, originAdvance: 138600, lender: 'SE Capital Partners' },
+  { id: 'VTX-0008', type: 'Skid Steer', make: 'Caterpillar', model: '262D', year: 2021, hours: 1840, vin: null, serial: 'CAT262D778899', originalCost: 64000, location: 'Tampa, FL', borrower: 'Bay Area Demolition', loanBalance: 41000, originAdvance: 44800, lender: 'First FL Equipment Finance' },
+  { id: 'VTX-0009', type: 'Crane', make: 'Grove', model: 'RT540E', year: 2015, hours: 5680, vin: null, serial: 'GRV540E112233', originalCost: 380000, location: 'Tampa, FL', borrower: 'Skyline Crane Services', loanBalance: 95000, originAdvance: 266000, lender: 'SE Capital Partners' },
+  { id: 'VTX-0010', type: 'Truck', make: 'Peterbilt', model: '579', year: 2020, hours: null, vin: '1XPBDP9X8LD123456', serial: null, originalCost: 165000, location: 'Lakeland, FL', borrower: 'Central FL Trucking', loanBalance: 82000, originAdvance: 115500, lender: 'Citizens Bank Equipment' },
+  { id: 'VTX-0011', type: 'Forklift', make: 'Toyota', model: '8FGU25', year: 2019, hours: 3240, vin: null, serial: 'TOY8FGU25445566', originalCost: 32000, location: 'Orlando, FL', borrower: 'Theme Park Logistics', loanBalance: 11500, originAdvance: 22400, lender: 'First FL Equipment Finance' },
+  { id: 'VTX-0012', type: 'Bulldozer', make: 'Caterpillar', model: 'D6T', year: 2014, hours: 11200, vin: null, serial: 'CATD6T990011', originalCost: 380000, location: 'Naples, FL', borrower: 'Collier Land Clearing', loanBalance: 28000, originAdvance: 266000, lender: 'SE Capital Partners' },
+  { id: 'VTX-0013', type: 'Wheel Loader', make: 'Volvo', model: 'L90H', year: 2020, hours: 3120, vin: null, serial: 'VLVL90H334455', originalCost: 220000, location: 'Tampa, FL', borrower: 'Tampa Bay Aggregates', loanBalance: 118000, originAdvance: 154000, lender: 'First FL Equipment Finance' },
+  { id: 'VTX-0014', type: 'Excavator', make: 'Hitachi', model: 'ZX350', year: 2018, hours: 6840, vin: null, serial: 'HIT350ZX667788', originalCost: 295000, location: 'Daytona Beach, FL', borrower: 'East Coast Excavation', loanBalance: 79000, originAdvance: 206500, lender: 'SE Capital Partners' },
+  { id: 'VTX-0015', type: 'Truck', make: 'Kenworth', model: 'T880', year: 2019, hours: null, vin: '1XKZD49X9KJ987654', serial: null, originalCost: 142000, location: 'Tallahassee, FL', borrower: 'Capital City Hauling', loanBalance: 46000, originAdvance: 99400, lender: 'Citizens Bank Equipment' },
 ];
 
+// Auction comps database (seeded - would be MarketCheck/Ritchie Bros in prod)
+const COMPS = [
+  { date: '2026-04-15', source: 'Ritchie Bros', location: 'Orlando, FL', make: 'Caterpillar', model: '320', year: 2019, hours: 4520, condition: 'Good', salePrice: 138500, channel: 'Auction' },
+  { date: '2026-04-12', source: 'Purple Wave', location: 'Atlanta, GA', make: 'Caterpillar', model: '320', year: 2019, hours: 5100, condition: 'Good', salePrice: 134000, channel: 'Auction' },
+  { date: '2026-04-08', source: 'IronPlanet', location: 'Houston, TX', make: 'Caterpillar', model: '320', year: 2018, hours: 6240, condition: 'Fair', salePrice: 119000, channel: 'Auction' },
+  { date: '2026-04-03', source: 'Machinery Trader', location: 'Tampa, FL', make: 'Caterpillar', model: '320', year: 2020, hours: 3100, condition: 'Excellent', salePrice: 168000, channel: 'Retail' },
+  { date: '2026-03-28', source: 'Ritchie Bros', location: 'Charlotte, NC', make: 'Caterpillar', model: '320', year: 2019, hours: 4900, condition: 'Good', salePrice: 141200, channel: 'Auction' },
+  { date: '2026-04-18', source: 'BigIron', location: 'Kansas City, MO', make: 'John Deere', model: '850K', year: 2017, hours: 7400, condition: 'Good', salePrice: 192000, channel: 'Auction' },
+  { date: '2026-04-10', source: 'Ritchie Bros', location: 'Phoenix, AZ', make: 'John Deere', model: '850K', year: 2017, hours: 8100, condition: 'Fair', salePrice: 178500, channel: 'Auction' },
+  { date: '2026-04-02', source: 'Purple Wave', location: 'Dallas, TX', make: 'John Deere', model: '850K', year: 2018, hours: 6800, condition: 'Good', salePrice: 218000, channel: 'Auction' },
+  { date: '2026-04-14', source: 'IronPlanet', location: 'Memphis, TN', make: 'Komatsu', model: 'PC210', year: 2016, hours: 8900, condition: 'Fair', salePrice: 88500, channel: 'Auction' },
+  { date: '2026-04-07', source: 'Ritchie Bros', location: 'Jacksonville, FL', make: 'Komatsu', model: 'PC210', year: 2017, hours: 7200, condition: 'Good', salePrice: 102000, channel: 'Auction' },
+  { date: '2026-04-16', source: 'Machinery Trader', location: 'Miami, FL', make: 'Bobcat', model: 'S650', year: 2020, hours: 2800, condition: 'Excellent', salePrice: 44200, channel: 'Retail' },
+  { date: '2026-04-09', source: 'Purple Wave', location: 'Birmingham, AL', make: 'Bobcat', model: 'S650', year: 2019, hours: 3400, condition: 'Good', salePrice: 38500, channel: 'Auction' },
+  { date: '2026-04-13', source: 'Equipment Trader', location: 'Tampa, FL', make: 'Ford', model: 'F-550', year: 2021, hours: null, condition: 'Good', salePrice: 56500, channel: 'Retail' },
+  { date: '2026-04-05', source: 'TruckPaper', location: 'Atlanta, GA', make: 'Ford', model: 'F-550', year: 2021, hours: null, condition: 'Excellent', salePrice: 61200, channel: 'Retail' },
+  { date: '2026-04-11', source: 'Ritchie Bros', location: 'Tampa, FL', make: 'Volvo', model: 'L90H', year: 2020, hours: 2900, condition: 'Excellent', salePrice: 158000, channel: 'Auction' },
+  { date: '2026-04-04', source: 'IronPlanet', location: 'Mobile, AL', make: 'Hitachi', model: 'ZX350', year: 2018, hours: 6500, condition: 'Good', salePrice: 196500, channel: 'Auction' },
+  { date: '2026-04-17', source: 'Ritchie Bros', location: 'Las Vegas, NV', make: 'Grove', model: 'RT540E', year: 2015, hours: 5400, condition: 'Good', salePrice: 188000, channel: 'Auction' },
+  { date: '2026-04-06', source: 'Machinery Trader', location: 'Tampa, FL', make: 'Toyota', model: '8FGU25', year: 2019, hours: 3100, condition: 'Good', salePrice: 18500, channel: 'Retail' },
+];
+
+// =================== ENGINE ===================
 function depreciate(orig, year, hours, type) {
   const ageYears = 2026 - year;
   const ageDecay = Math.max(0, 1 - ageYears * 0.07);
   const hoursDecay = hours ? Math.max(0.25, 1 - (hours / 12000) * 0.55) : 1;
-  const fmv = type === 'Truck' ? orig * ageDecay * 0.92 : orig * ageDecay * hoursDecay;
-  return Math.round(fmv);
+  return Math.round(type === 'Truck' ? orig * ageDecay * 0.92 : orig * ageDecay * hoursDecay);
 }
-function olv(fmv) { return Math.round(fmv * 0.78); }
-function flv(fmv) { return Math.round(fmv * 0.62); }
-function healthScore(asset) {
-  const ageYears = 2026 - asset.year;
-  const ageHealth = Math.max(0, 100 - ageYears * 6);
-  const hoursHealth = asset.hours ? Math.max(0, 100 - (asset.hours / 12000) * 100) : 90;
-  return Math.round((ageHealth * 0.35 + hoursHealth * 0.65));
+const olv = (f) => Math.round(f * 0.78);
+const flv = (f) => Math.round(f * 0.62);
+function healthScore(a) {
+  const ageY = 2026 - a.year;
+  const ah = Math.max(0, 100 - ageY * 6);
+  const hh = a.hours ? Math.max(0, 100 - (a.hours / 12000) * 100) : 90;
+  return Math.round(ah * 0.35 + hh * 0.65);
 }
-function ltv(asset) {
-  const fmv = depreciate(asset.originalCost, asset.year, asset.hours, asset.type);
-  const cv = olv(fmv);
-  return cv > 0 ? asset.loanBalance / cv : 0;
+function ltv(a) {
+  const f = depreciate(a.originalCost, a.year, a.hours, a.type);
+  const cv = olv(f);
+  return cv > 0 ? a.loanBalance / cv : 0;
 }
-function alertLevel(asset) {
-  const r = ltv(asset); const h = healthScore(asset);
+function alertLevel(a) {
+  const r = ltv(a); const h = healthScore(a);
   if (r > 0.85 || h < 30) return 'critical';
   if (r > 0.70 || h < 50) return 'warn';
   return 'ok';
 }
-function valuationHistory(asset) {
-  const fmv = depreciate(asset.originalCost, asset.year, asset.hours, asset.type);
+function valuationHistory(a) {
+  const fmv = depreciate(a.originalCost, a.year, a.hours, a.type);
   const out = [];
   for (let i = 23; i >= 0; i--) {
-    const monthlyDecay = 1 - (i * 0.008) - (Math.sin(i / 3) * 0.012);
+    const decay = 1 - i * 0.008 - Math.sin(i / 3) * 0.012;
     const noise = 1 + (Math.random() - 0.5) * 0.025;
-    const v = fmv * monthlyDecay * noise;
-    out.push({ month: 23 - i, fmv: Math.round(v), olv: Math.round(v * 0.78), loan: Math.round(asset.loanBalance * (1 + i * 0.018)) });
+    const v = fmv * decay * noise;
+    out.push({ month: 23 - i, fmv: Math.round(v), olv: Math.round(v * 0.78), loan: Math.round(a.loanBalance * (1 + i * 0.018)) });
   }
   return out;
 }
@@ -137,46 +153,41 @@ const fmt = (n) => '$' + Math.round(n).toLocaleString('en-US');
 const fmtM = (n) => { if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M'; if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K'; return '$' + Math.round(n); };
 const pct = (n) => (n * 100).toFixed(1) + '%';
 
-// =========== INLINE SVG CHART (no library) ===========
+// Find comps for an asset
+function compsFor(asset) {
+  return COMPS.filter(c => c.make === asset.make && c.model === asset.model);
+}
+
+// =================== CHART ===================
 function LineChart({ data, keys, height = 220, width = 700 }) {
   if (!data || data.length === 0) return null;
   const padL = 50, padR = 15, padT = 15, padB = 25;
-  const chartW = width - padL - padR;
-  const chartH = height - padT - padB;
+  const cw = width - padL - padR, ch = height - padT - padB;
   const allVals = data.flatMap(d => keys.map(k => d[k.key]));
-  const minY = Math.min(...allVals) * 0.92;
-  const maxY = Math.max(...allVals) * 1.08;
-  const xStep = chartW / (data.length - 1);
-  const yScale = (v) => padT + chartH - ((v - minY) / (maxY - minY)) * chartH;
+  const minY = Math.min(...allVals) * 0.92, maxY = Math.max(...allVals) * 1.08;
+  const xStep = cw / (data.length - 1);
+  const yScale = (v) => padT + ch - ((v - minY) / (maxY - minY)) * ch;
   const xScale = (i) => padL + i * xStep;
-
-  const yTicks = 4;
-  const tickVals = Array.from({length: yTicks + 1}, (_, i) => minY + (maxY - minY) * (i / yTicks));
-
+  const ticks = Array.from({ length: 5 }, (_, i) => minY + (maxY - minY) * (i / 4));
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full" preserveAspectRatio="none">
-      {/* gridlines */}
-      {tickVals.map((v, i) => (
+      {ticks.map((v, i) => (
         <g key={i}>
           <line x1={padL} x2={width - padR} y1={yScale(v)} y2={yScale(v)} stroke="#1f2937" strokeDasharray="2 4" />
-          <text x={padL - 8} y={yScale(v) + 3} fill="#6b7785" fontSize="9" textAnchor="end" fontFamily="IBM Plex Mono">
-            ${(v / 1000).toFixed(0)}K
-          </text>
+          <text x={padL - 8} y={yScale(v) + 3} fill="#6b7785" fontSize="9" textAnchor="end" fontFamily="IBM Plex Mono">${(v / 1000).toFixed(0)}K</text>
         </g>
       ))}
-      {/* x labels */}
       {data.map((d, i) => i % 4 === 0 && (
         <text key={i} x={xScale(i)} y={height - 8} fill="#6b7785" fontSize="9" textAnchor="middle" fontFamily="IBM Plex Mono">
           {i === data.length - 1 ? 'NOW' : `-${data.length - 1 - i}M`}
         </text>
       ))}
-      {/* lines */}
       {keys.map(k => {
         const path = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${xScale(i)} ${yScale(d[k.key])}`).join(' ');
-        const areaPath = k.fill ? `${path} L ${xScale(data.length - 1)} ${padT + chartH} L ${xScale(0)} ${padT + chartH} Z` : null;
+        const area = k.fill ? `${path} L ${xScale(data.length - 1)} ${padT + ch} L ${xScale(0)} ${padT + ch} Z` : null;
         return (
           <g key={k.key}>
-            {areaPath && <path d={areaPath} fill={k.fill} opacity="0.15" />}
+            {area && <path d={area} fill={k.fill} opacity="0.15" />}
             <path d={path} fill="none" stroke={k.color} strokeWidth={k.width || 1.5} strokeDasharray={k.dash || ''} />
           </g>
         );
@@ -185,7 +196,93 @@ function LineChart({ data, keys, height = 220, width = 700 }) {
   );
 }
 
-function Header({ now }) {
+// =================== PASSWORD GATE ===================
+function PasswordGate({ onUnlock }) {
+  const [val, setVal] = useState('');
+  const [err, setErr] = useState(false);
+  const [shake, setShake] = useState(false);
+  const [now, setNow] = useState(new Date());
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    inputRef.current && inputRef.current.focus();
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  function submit(e) {
+    e && e.preventDefault();
+    if (val.trim().toUpperCase() === 'VALTRAX' || val.trim().toUpperCase() === 'DEMO' || val.trim() === 'uf2026') {
+      sessionStorage.setItem('vtx-auth', '1');
+      onUnlock();
+    } else {
+      setErr(true); setShake(true);
+      setTimeout(() => setShake(false), 400);
+      setVal('');
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+      <div className="scan-line scan-anim"></div>
+      <div className={`grid-card max-w-md w-full mx-4 p-8 fade-up ${shake ? 'animate-pulse' : ''}`} style={{ animation: shake ? 'shake 0.4s' : '' }}>
+        <style>{`@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }`}</style>
+        <div className="flex items-center gap-2.5 mb-1">
+          <div className="w-2 h-2 bg-[var(--amber)] pulse-dot"></div>
+          <span className="mono font-bold tracking-[0.2em]">VALTRAX</span>
+        </div>
+        <div className="label mb-8">Collateral Intelligence Terminal</div>
+
+        <div className="text-[11px] text-[var(--muted)] mb-1">▸ AUTHORIZED ACCESS ONLY</div>
+        <div className="text-[10px] text-[var(--dim)] mb-6 leading-relaxed">
+          This terminal is restricted to credentialed users of subscribing institutions.
+          Unauthorized access is prohibited and monitored. All session activity is logged
+          per Valtrax Inc. Data Use Agreement § 4.2.
+        </div>
+
+        <form onSubmit={submit}>
+          <div className="border border-[var(--border-2)] mb-3 px-4 py-4 bg-[var(--bg)]">
+            <div className="label text-center mb-3 text-[var(--amber)]">▸ ENTER ACCESS KEY</div>
+            <input
+              ref={inputRef}
+              type="password"
+              className="term w-full"
+              value={val}
+              onChange={(e) => { setVal(e.target.value); setErr(false); }}
+              placeholder="• • • • • • •"
+              autoComplete="off"
+            />
+          </div>
+          {err && (
+            <div className="text-[10px] text-[var(--red)] mb-3 text-center tracking-wider blink">
+              ⚠ INVALID CREDENTIALS · ATTEMPT LOGGED
+            </div>
+          )}
+          <button type="submit" className="w-full py-2.5 bg-[var(--amber)] text-[var(--bg)] mono text-[11px] tracking-[0.2em] font-medium hover:bg-[var(--amber-dim)] hover:text-[var(--text)] transition">
+            AUTHENTICATE →
+          </button>
+        </form>
+
+        <div className="mt-8 pt-4 border-t border-[var(--border)] grid grid-cols-2 gap-y-1 text-[9px] text-[var(--dim)]">
+          <span>SESSION ID</span><span className="text-right num text-[var(--muted)]">VTX-{Math.floor(Math.random() * 9000000 + 1000000)}</span>
+          <span>SERVER</span><span className="text-right text-[var(--muted)]">us-east-1.terminal.valtrax</span>
+          <span>ENCRYPTION</span><span className="text-right text-[var(--green)]">TLS 1.3 · AES-256</span>
+          <span>UTC</span><span className="text-right num text-[var(--muted)]">{now.toUTCString().split(' ').slice(1, 5).join(' ')}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =================== HEADER ===================
+function Header({ now, route, setRoute, onLogout }) {
+  const tabs = [
+    { k: 'portfolio', l: 'Portfolio' },
+    { k: 'watchlist', l: 'Watchlist' },
+    { k: 'comps', l: 'Comps' },
+    { k: 'covenants', l: 'Covenants' },
+    { k: 'reports', l: 'Reports' },
+  ];
   return (
     <div className="border-b border-[var(--border)] bg-[var(--bg-1)] relative z-10">
       <div className="flex items-center justify-between px-6 py-3">
@@ -196,27 +293,24 @@ function Header({ now }) {
             <span className="label text-[var(--dim)]">/ COLLATERAL INTELLIGENCE TERMINAL</span>
           </div>
           <nav className="flex items-center gap-5 text-[10px] tracking-[0.15em] uppercase">
-            <a className="text-[var(--amber)] border-b border-[var(--amber)] pb-0.5">Portfolio</a>
-            <a className="text-[var(--dim)] hover:text-[var(--text)] cursor-pointer">Watchlist</a>
-            <a className="text-[var(--dim)] hover:text-[var(--text)] cursor-pointer">Comps</a>
-            <a className="text-[var(--dim)] hover:text-[var(--text)] cursor-pointer">Covenants</a>
-            <a className="text-[var(--dim)] hover:text-[var(--text)] cursor-pointer">Reports</a>
+            {tabs.map(t => (
+              <a key={t.k} onClick={() => setRoute(t.k)} className={`cursor-pointer pb-0.5 ${route === t.k ? 'text-[var(--amber)] border-b border-[var(--amber)]' : 'text-[var(--dim)] hover:text-[var(--text)]'}`}>
+                {t.l}
+              </a>
+            ))}
           </nav>
         </div>
         <div className="flex items-center gap-6 text-[10px] tracking-[0.12em]">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-[var(--green)] pulse-dot"></div>
-            <span className="text-[var(--dim)]">FEED</span>
-            <span className="text-[var(--green)]">LIVE</span>
-          </div>
+          <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[var(--green)] pulse-dot"></div><span className="text-[var(--dim)]">FEED</span><span className="text-[var(--green)]">LIVE</span></div>
           <div className="text-[var(--dim)] num">{now.toUTCString().split(' ').slice(1, 5).join(' ')} UTC</div>
           <div className="px-2 py-1 border border-[var(--border-2)] text-[var(--muted)]">BG / DEMO</div>
+          <button onClick={onLogout} className="text-[var(--dim)] hover:text-[var(--red)] tracking-wider">LOGOUT</button>
         </div>
       </div>
       <div className="border-t border-[var(--border)] bg-[var(--bg)] overflow-hidden">
         <div className="flex ticker-track whitespace-nowrap py-1.5 text-[11px] num">
-          {[0, 1].map(dup => (
-            <div key={dup} className="flex gap-8 px-4">
+          {[0, 1].map(d => (
+            <div key={d} className="flex gap-8 px-4">
               <span><span className="text-[var(--dim)]">CAT320 FMV</span> <span className="text-[var(--green)]">$142K</span> <span className="text-[var(--green)]">+0.4%</span></span>
               <span><span className="text-[var(--dim)]">DEERE 850K OLV</span> <span className="text-[var(--red)]">$198K</span> <span className="text-[var(--red)]">-1.2%</span></span>
               <span><span className="text-[var(--dim)]">F-550 RETAIL</span> <span className="text-[var(--green)]">$58K</span> <span className="text-[var(--green)]">+0.2%</span></span>
@@ -226,7 +320,7 @@ function Header({ now }) {
               <span><span className="text-[var(--dim)]">BOBCAT S650</span> <span className="text-[var(--green)]">$41K</span> <span className="text-[var(--green)]">+0.6%</span></span>
               <span><span className="text-[var(--dim)]">PETERBILT 579</span> <span className="text-[var(--red)]">$94K</span> <span className="text-[var(--red)]">-0.4%</span></span>
               <span><span className="text-[var(--dim)]">FED FUNDS</span> <span className="text-[var(--text)]">4.33%</span></span>
-              <span><span className="text-[var(--dim)]">RBA AUCTION VOL</span> <span className="text-[var(--green)]">$2.1B</span> <span className="text-[var(--green)]">+8.2%</span></span>
+              <span><span className="text-[var(--dim)]">RBA Q1 VOL</span> <span className="text-[var(--green)]">$2.1B</span> <span className="text-[var(--green)]">+8.2%</span></span>
             </div>
           ))}
         </div>
@@ -235,6 +329,7 @@ function Header({ now }) {
   );
 }
 
+// =================== SHARED ===================
 function Stat({ label, value, sub, accent }) {
   return (
     <div className="grid-card px-5 py-4">
@@ -244,7 +339,17 @@ function Stat({ label, value, sub, accent }) {
     </div>
   );
 }
+function HealthBar({ score }) {
+  const c = score >= 70 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)';
+  return (
+    <div className="flex items-center gap-2 w-32">
+      <div className="health-bar flex-1"><div className="health-bar-fill" style={{ width: `${score}%`, background: c }}></div></div>
+      <span className="num text-[11px]" style={{ color: c }}>{score}</span>
+    </div>
+  );
+}
 
+// =================== PORTFOLIO PAGE ===================
 function PortfolioStrip({ assets }) {
   const stats = useMemo(() => {
     let fmv = 0, col = 0, exp = 0, alerts = 0;
@@ -265,17 +370,6 @@ function PortfolioStrip({ assets }) {
     </div>
   );
 }
-
-function HealthBar({ score }) {
-  const color = score >= 70 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)';
-  return (
-    <div className="flex items-center gap-2 w-32">
-      <div className="health-bar flex-1"><div className="health-bar-fill" style={{ width: `${score}%`, background: color }}></div></div>
-      <span className="num text-[11px]" style={{ color }}>{score}</span>
-    </div>
-  );
-}
-
 function FleetTable({ assets, onSelect, filter, setFilter }) {
   const filtered = useMemo(() => {
     if (filter === 'all') return assets;
@@ -292,35 +386,29 @@ function FleetTable({ assets, onSelect, filter, setFilter }) {
         </div>
         <div className="flex gap-px text-[10px]">
           {types.map(t => (
-            <button key={t} onClick={() => setFilter(t)} className={`px-2.5 py-1 uppercase tracking-wider transition ${filter === t ? 'bg-[var(--amber)] text-[var(--bg)]' : 'bg-[var(--bg-2)] text-[var(--dim)] hover:text-[var(--text)]'}`}>{t}</button>
+            <button key={t} onClick={() => setFilter(t)} className={`px-2.5 py-1 uppercase tracking-wider ${filter === t ? 'bg-[var(--amber)] text-[var(--bg)]' : 'bg-[var(--bg-2)] text-[var(--dim)] hover:text-[var(--text)]'}`}>{t}</button>
           ))}
         </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-[12px]">
-          <thead>
-            <tr className="border-b border-[var(--border)] text-left">
-              {['ASSET ID', 'EQUIPMENT', 'YR', 'HRS/MI', 'FMV', 'OLV', 'LOAN', 'LTV', 'HEALTH', 'BORROWER', ''].map(h => (
-                <th key={h} className="label px-4 py-2.5 font-medium">{h}</th>
-              ))}
-            </tr>
-          </thead>
+          <thead><tr className="border-b border-[var(--border)] text-left">
+            {['ASSET ID', 'EQUIPMENT', 'YR', 'HRS/MI', 'FMV', 'OLV', 'LOAN', 'LTV', 'HEALTH', 'BORROWER', ''].map(h => (
+              <th key={h} className="label px-4 py-2.5 font-medium">{h}</th>
+            ))}
+          </tr></thead>
           <tbody>
             {filtered.map(a => {
-              const fmv = depreciate(a.originalCost, a.year, a.hours, a.type);
-              const cv = olv(fmv); const r = ltv(a); const lvl = alertLevel(a);
-              const dotColor = lvl === 'critical' ? 'var(--red)' : lvl === 'warn' ? 'var(--amber)' : 'var(--green)';
+              const f = depreciate(a.originalCost, a.year, a.hours, a.type);
+              const cv = olv(f); const r = ltv(a); const lvl = alertLevel(a);
+              const dot = lvl === 'critical' ? 'var(--red)' : lvl === 'warn' ? 'var(--amber)' : 'var(--green)';
               return (
                 <tr key={a.id} onClick={() => onSelect(a)} className="row-hover border-b border-[var(--border)] cursor-pointer">
-                  <td className="px-4 py-2.5 num text-[var(--amber)]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full" style={{ background: dotColor }}></div>{a.id}
-                    </div>
-                  </td>
+                  <td className="px-4 py-2.5 num text-[var(--amber)]"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full" style={{ background: dot }}></div>{a.id}</div></td>
                   <td className="px-4 py-2.5"><span className="text-[var(--text)]">{a.make}</span> <span className="text-[var(--dim)]">{a.model}</span></td>
                   <td className="px-4 py-2.5 num text-[var(--muted)]">{a.year}</td>
                   <td className="px-4 py-2.5 num text-[var(--muted)]">{a.hours ? a.hours.toLocaleString() : '—'}</td>
-                  <td className="px-4 py-2.5 num text-[var(--text)]">{fmtM(fmv)}</td>
+                  <td className="px-4 py-2.5 num text-[var(--text)]">{fmtM(f)}</td>
                   <td className="px-4 py-2.5 num text-[var(--muted)]">{fmtM(cv)}</td>
                   <td className="px-4 py-2.5 num text-[var(--muted)]">{fmtM(a.loanBalance)}</td>
                   <td className="px-4 py-2.5 num" style={{ color: r > 0.85 ? 'var(--red)' : r > 0.70 ? 'var(--amber)' : 'var(--green)' }}>{pct(r)}</td>
@@ -336,18 +424,17 @@ function FleetTable({ assets, onSelect, filter, setFilter }) {
     </div>
   );
 }
-
-function AlertsPanel({ assets }) {
-  const alerts = assets.map(a => ({ a, lvl: alertLevel(a), r: ltv(a), h: healthScore(a) })).filter(x => x.lvl !== 'ok').sort((x, y) => y.r - x.r);
+function AlertsPanel({ assets, onSelect }) {
+  const al = assets.map(a => ({ a, lvl: alertLevel(a), r: ltv(a), h: healthScore(a) })).filter(x => x.lvl !== 'ok').sort((x, y) => y.r - x.r);
   return (
     <div className="grid-card h-full">
       <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
         <span className="label text-[var(--red)]">▸ COVENANT ALERTS</span>
-        <span className="text-[10px] text-[var(--dim)] num">{alerts.length} ACTIVE</span>
+        <span className="text-[10px] text-[var(--dim)] num">{al.length} ACTIVE</span>
       </div>
       <div className="divide-y divide-[var(--border)]">
-        {alerts.slice(0, 6).map(({ a, lvl, r, h }) => (
-          <div key={a.id} className="px-4 py-3 hover:bg-[var(--bg-2)] cursor-pointer">
+        {al.slice(0, 6).map(({ a, lvl, r, h }) => (
+          <div key={a.id} onClick={() => onSelect && onSelect(a)} className="px-4 py-3 hover:bg-[var(--bg-2)] cursor-pointer">
             <div className="flex items-center justify-between mb-1">
               <span className="num text-[var(--amber)] text-[11px]">{a.id}</span>
               <span className={`text-[9px] tracking-wider px-1.5 py-0.5 ${lvl === 'critical' ? 'bg-[var(--red)] text-[var(--bg)]' : 'border border-[var(--amber)] text-[var(--amber)]'}`}>{lvl === 'critical' ? 'CRITICAL' : 'WATCH'}</span>
@@ -360,12 +447,11 @@ function AlertsPanel({ assets }) {
             </div>
           </div>
         ))}
-        {alerts.length === 0 && <div className="px-4 py-8 text-center text-[var(--dim)] text-[11px]">NO ACTIVE ALERTS</div>}
+        {al.length === 0 && <div className="px-4 py-8 text-center text-[var(--dim)] text-[11px]">NO ACTIVE ALERTS</div>}
       </div>
     </div>
   );
 }
-
 function MacroPanel() {
   const series = [
     { label: 'CONSTR PPI (BLS)', val: '324.6', delta: '+0.3%', color: 'var(--green)' },
@@ -395,20 +481,19 @@ function MacroPanel() {
     </div>
   );
 }
-
 function PortfolioChart({ assets }) {
   const data = useMemo(() => {
     const out = [];
     for (let i = 23; i >= 0; i--) {
-      let fmv = 0, loan = 0;
+      let f = 0, l = 0;
       assets.forEach(a => {
-        const baseFmv = depreciate(a.originalCost, a.year, a.hours, a.type);
-        const decay = 1 - (i * 0.006) - (Math.sin(i / 4) * 0.008);
+        const base = depreciate(a.originalCost, a.year, a.hours, a.type);
+        const decay = 1 - i * 0.006 - Math.sin(i / 4) * 0.008;
         const noise = 1 + (Math.random() - 0.5) * 0.012;
-        fmv += baseFmv * decay * noise;
-        loan += a.loanBalance * (1 + i * 0.012);
+        f += base * decay * noise;
+        l += a.loanBalance * (1 + i * 0.012);
       });
-      out.push({ month: 23 - i, fmv: Math.round(fmv), loan: Math.round(loan) });
+      out.push({ month: 23 - i, fmv: Math.round(f), loan: Math.round(l) });
     }
     return out;
   }, [assets]);
@@ -422,15 +507,458 @@ function PortfolioChart({ assets }) {
         </div>
       </div>
       <div className="p-3" style={{ height: 260 }}>
-        <LineChart data={data} keys={[
-          { key: 'fmv', color: '#ffb000', fill: '#ffb000', width: 1.8 },
-          { key: 'loan', color: '#4d9fff', width: 1.5 },
-        ]} height={240} width={700} />
+        <LineChart data={data} keys={[{ key: 'fmv', color: '#ffb000', fill: '#ffb000', width: 1.8 }, { key: 'loan', color: '#4d9fff', width: 1.5 }]} height={240} width={700} />
       </div>
     </div>
   );
 }
 
+function PortfolioPage({ onSelect }) {
+  const [filter, setFilter] = useState('all');
+  return (
+    <div className="space-y-4 fade-up">
+      <PortfolioStrip assets={FLEET} />
+      <div className="grid grid-cols-3 gap-4">
+        <div className="col-span-2"><PortfolioChart assets={FLEET} /></div>
+        <div><MacroPanel /></div>
+      </div>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="col-span-2"><FleetTable assets={FLEET} onSelect={onSelect} filter={filter} setFilter={setFilter} /></div>
+        <div><AlertsPanel assets={FLEET} onSelect={onSelect} /></div>
+      </div>
+    </div>
+  );
+}
+
+// =================== WATCHLIST PAGE ===================
+function WatchlistPage({ onSelect }) {
+  // Watchlist = 5 highest-risk assets, plus a "manual" watchlist
+  const [tab, setTab] = useState('risk');
+  const [manual, setManual] = useState([FLEET[0].id, FLEET[2].id, FLEET[8].id]);
+
+  const lists = {
+    risk: FLEET.slice().sort((a, b) => ltv(b) - ltv(a)).slice(0, 8),
+    aging: FLEET.slice().sort((a, b) => (b.hours || 0) - (a.hours || 0)).slice(0, 8),
+    manual: FLEET.filter(a => manual.includes(a.id)),
+    upcoming: FLEET.filter(a => 2026 - a.year >= 5).sort((a, b) => a.year - b.year),
+  };
+
+  const tabs = [
+    { k: 'risk', l: 'High LTV', n: lists.risk.length, c: 'var(--red)' },
+    { k: 'aging', l: 'High Hours', n: lists.aging.length, c: 'var(--amber)' },
+    { k: 'manual', l: 'My Watchlist', n: lists.manual.length, c: 'var(--amber)' },
+    { k: 'upcoming', l: 'Maturity Watch', n: lists.upcoming.length, c: 'var(--blue)' },
+  ];
+
+  const active = lists[tab];
+
+  return (
+    <div className="space-y-4 fade-up">
+      {/* hero header */}
+      <div className="grid-card p-6 flex items-center justify-between">
+        <div>
+          <div className="label mb-2 text-[var(--amber)]">▸ WATCHLIST</div>
+          <h1 className="mono text-3xl font-light mb-2">Curated Asset Surveillance</h1>
+          <div className="text-[12px] text-[var(--muted)] max-w-2xl">
+            Monitor specific assets requiring elevated attention. Each list refreshes against
+            live valuation and health signals. Click any row to drill into the asset terminal.
+          </div>
+        </div>
+        <div className="flex gap-px">
+          {tabs.map(t => (
+            <div key={t.k} className="grid-card px-4 py-3 min-w-[120px]">
+              <div className="label">{t.l}</div>
+              <div className="mono text-2xl num mt-1" style={{ color: t.c }}>{String(t.n).padStart(2, '0')}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* tabs */}
+      <div className="flex gap-px">
+        {tabs.map(t => (
+          <button key={t.k} onClick={() => setTab(t.k)} className={`px-4 py-2.5 text-[10px] tracking-[0.18em] uppercase transition ${tab === t.k ? 'bg-[var(--amber)] text-[var(--bg)]' : 'bg-[var(--bg-1)] text-[var(--dim)] hover:text-[var(--text)] border border-[var(--border)]'}`}>
+            {t.l} <span className="num ml-2 opacity-70">{t.n}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* table */}
+      <div className="grid-card">
+        <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
+          <span className="label text-[var(--amber)]">▸ {tabs.find(t => t.k === tab).l.toUpperCase()}</span>
+          <div className="flex gap-3 text-[10px] text-[var(--dim)]">
+            <span>SORT: <span className="text-[var(--amber)]">RISK ↓</span></span>
+            <span>EXPORT CSV</span>
+            <span>EXPORT PDF</span>
+          </div>
+        </div>
+        <table className="w-full text-[12px]">
+          <thead><tr className="border-b border-[var(--border)] text-left">
+            {['', 'ASSET', 'EQUIPMENT', 'BORROWER', 'FMV', 'LOAN', 'LTV', 'Δ 30D', 'HEALTH', 'TRIGGER', ''].map(h => (
+              <th key={h} className="label px-4 py-2.5 font-medium">{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {active.map(a => {
+              const f = depreciate(a.originalCost, a.year, a.hours, a.type);
+              const r = ltv(a); const h = healthScore(a); const lvl = alertLevel(a);
+              const delta30 = -(Math.random() * 4 + 0.2).toFixed(1);
+              const trigger = lvl === 'critical' ? 'LTV BREACH' : lvl === 'warn' ? 'LTV WATCH' : (h < 60 ? 'HEALTH DECAY' : 'AGING');
+              const dot = lvl === 'critical' ? 'var(--red)' : lvl === 'warn' ? 'var(--amber)' : 'var(--blue)';
+              return (
+                <tr key={a.id} onClick={() => onSelect(a)} className="row-hover border-b border-[var(--border)] cursor-pointer">
+                  <td className="px-4 py-2.5"><div className="w-1.5 h-1.5 rounded-full" style={{ background: dot }}></div></td>
+                  <td className="px-4 py-2.5 num text-[var(--amber)]">{a.id}</td>
+                  <td className="px-4 py-2.5"><span className="text-[var(--text)]">{a.make} {a.model}</span> <span className="text-[var(--dim)]">{a.year}</span></td>
+                  <td className="px-4 py-2.5 text-[var(--muted)] text-[11px]">{a.borrower}</td>
+                  <td className="px-4 py-2.5 num text-[var(--text)]">{fmtM(f)}</td>
+                  <td className="px-4 py-2.5 num text-[var(--muted)]">{fmtM(a.loanBalance)}</td>
+                  <td className="px-4 py-2.5 num" style={{ color: r > 0.85 ? 'var(--red)' : r > 0.70 ? 'var(--amber)' : 'var(--green)' }}>{pct(r)}</td>
+                  <td className="px-4 py-2.5 num text-[var(--red)]">{delta30}%</td>
+                  <td className="px-4 py-2.5"><HealthBar score={h} /></td>
+                  <td className="px-4 py-2.5"><span className="text-[9px] tracking-wider px-1.5 py-0.5 border border-[var(--border-2)] text-[var(--muted)]">{trigger}</span></td>
+                  <td className="px-4 py-2.5 row-arrow">→</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* notes */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="grid-card p-4">
+          <div className="label mb-3 text-[var(--amber)]">▸ ANALYST NOTES</div>
+          <div className="space-y-3 text-[11px]">
+            <div className="border-l-2 border-[var(--amber)] pl-3">
+              <div className="text-[var(--text)] mb-1">VTX-0012 trending toward critical breach</div>
+              <div className="text-[var(--dim)] text-[10px]">Caterpillar D6T at 11,200 hrs — final 800 hrs before undercarriage rebuild threshold. Recommend field inspection within 30 days.</div>
+              <div className="text-[var(--dim)] text-[9px] mt-1 num">B. GRUEN · 2026-04-19 14:22 UTC</div>
+            </div>
+            <div className="border-l-2 border-[var(--blue)] pl-3">
+              <div className="text-[var(--text)] mb-1">Auction comps soft for Komatsu PC210</div>
+              <div className="text-[var(--dim)] text-[10px]">Three sub-$100K hammer prices in last 30 days. Reassess OLV haircut on VTX-0007.</div>
+              <div className="text-[var(--dim)] text-[9px] mt-1 num">B. GRUEN · 2026-04-17 09:41 UTC</div>
+            </div>
+          </div>
+        </div>
+        <div className="grid-card p-4">
+          <div className="label mb-3 text-[var(--amber)]">▸ AUTO-ESCALATION RULES</div>
+          <div className="space-y-2 text-[11px]">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
+              <span className="text-[var(--text)]">LTV &gt; 85%</span>
+              <span className="text-[var(--green)] text-[10px]">→ NOTIFY UNDERWRITING</span>
+            </div>
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
+              <span className="text-[var(--text)]">Health &lt; 30</span>
+              <span className="text-[var(--green)] text-[10px]">→ FIELD INSPECTION</span>
+            </div>
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
+              <span className="text-[var(--text)]">Hours &gt; 10,000</span>
+              <span className="text-[var(--green)] text-[10px]">→ APPRAISAL REFRESH</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[var(--text)]">FMV decline &gt; 5% / 30d</span>
+              <span className="text-[var(--green)] text-[10px]">→ COVENANT REVIEW</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =================== COMPS PAGE ===================
+function CompsPage() {
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState({ make: 'all', channel: 'all', condition: 'all' });
+
+  const filtered = useMemo(() => {
+    return COMPS.filter(c => {
+      if (filter.make !== 'all' && c.make !== filter.make) return false;
+      if (filter.channel !== 'all' && c.channel !== filter.channel) return false;
+      if (filter.condition !== 'all' && c.condition !== filter.condition) return false;
+      if (search && !`${c.make} ${c.model} ${c.location} ${c.source}`.toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
+    });
+  }, [search, filter]);
+
+  const stats = useMemo(() => {
+    const prices = filtered.map(c => c.salePrice);
+    return {
+      count: filtered.length,
+      median: prices.length ? Math.round(prices.sort((a, b) => a - b)[Math.floor(prices.length / 2)]) : 0,
+      avg: prices.length ? Math.round(prices.reduce((s, p) => s + p, 0) / prices.length) : 0,
+      min: prices.length ? Math.min(...prices) : 0,
+      max: prices.length ? Math.max(...prices) : 0,
+    };
+  }, [filtered]);
+
+  const makes = ['all', ...new Set(COMPS.map(c => c.make))];
+
+  return (
+    <div className="space-y-4 fade-up">
+      <div className="grid-card p-6">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <div className="label mb-2 text-[var(--amber)]">▸ AUCTION COMPS DATABASE</div>
+            <h1 className="mono text-3xl font-light">Live Market Transaction Feed</h1>
+            <div className="text-[12px] text-[var(--muted)] mt-2 max-w-3xl">
+              Sold prices from Ritchie Bros, Purple Wave, IronPlanet, BigIron, Machinery Trader, Equipment Trader, TruckPaper.
+              Aggregated daily and normalized for hours, year, and condition. Used to derive FMV/OLV haircuts.
+            </div>
+          </div>
+          <div className="text-right text-[10px] text-[var(--dim)]">
+            <div>LAST SYNC <span className="text-[var(--green)] num">2 MIN AGO</span></div>
+            <div className="mt-1">SOURCES <span className="text-[var(--text)] num">7 ACTIVE</span></div>
+            <div className="mt-1">RECORDS <span className="text-[var(--amber)] num">{COMPS.length.toLocaleString()}</span></div>
+          </div>
+        </div>
+      </div>
+
+      {/* stats strip */}
+      <div className="grid grid-cols-5 gap-px bg-[var(--border)]">
+        <Stat label="Comps Returned" value={stats.count} sub="matching filters" accent="text-[var(--amber)]" />
+        <Stat label="Median Sale" value={fmtM(stats.median)} sub="50th percentile" />
+        <Stat label="Mean Sale" value={fmtM(stats.avg)} sub="filtered avg" />
+        <Stat label="Low" value={fmtM(stats.min)} sub="filtered min" accent="text-[var(--red)]" />
+        <Stat label="High" value={fmtM(stats.max)} sub="filtered max" accent="text-[var(--green)]" />
+      </div>
+
+      {/* filters */}
+      <div className="grid-card p-4">
+        <div className="grid grid-cols-12 gap-3 items-end">
+          <div className="col-span-4">
+            <div className="label mb-1.5">SEARCH</div>
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="make, model, location, source..." className="w-full bg-[var(--bg)] border border-[var(--border-2)] px-3 py-2 text-[12px] text-[var(--text)] outline-none focus:border-[var(--amber)] mono" />
+          </div>
+          <div className="col-span-2">
+            <div className="label mb-1.5">MAKE</div>
+            <select value={filter.make} onChange={(e) => setFilter({ ...filter, make: e.target.value })} className="w-full bg-[var(--bg)] border border-[var(--border-2)] px-3 py-2 text-[12px] text-[var(--text)] outline-none mono">
+              {makes.map(m => <option key={m} value={m}>{m === 'all' ? 'ALL MAKES' : m}</option>)}
+            </select>
+          </div>
+          <div className="col-span-2">
+            <div className="label mb-1.5">CHANNEL</div>
+            <select value={filter.channel} onChange={(e) => setFilter({ ...filter, channel: e.target.value })} className="w-full bg-[var(--bg)] border border-[var(--border-2)] px-3 py-2 text-[12px] text-[var(--text)] outline-none mono">
+              <option value="all">ALL CHANNELS</option><option value="Auction">Auction</option><option value="Retail">Retail</option>
+            </select>
+          </div>
+          <div className="col-span-2">
+            <div className="label mb-1.5">CONDITION</div>
+            <select value={filter.condition} onChange={(e) => setFilter({ ...filter, condition: e.target.value })} className="w-full bg-[var(--bg)] border border-[var(--border-2)] px-3 py-2 text-[12px] text-[var(--text)] outline-none mono">
+              <option value="all">ALL</option><option value="Excellent">Excellent</option><option value="Good">Good</option><option value="Fair">Fair</option>
+            </select>
+          </div>
+          <div className="col-span-2">
+            <button onClick={() => { setSearch(''); setFilter({ make: 'all', channel: 'all', condition: 'all' }); }} className="w-full py-2 bg-[var(--bg-2)] text-[var(--dim)] hover:text-[var(--amber)] text-[10px] tracking-wider border border-[var(--border-2)]">CLEAR FILTERS</button>
+          </div>
+        </div>
+      </div>
+
+      {/* comps table */}
+      <div className="grid-card">
+        <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
+          <span className="label text-[var(--amber)]">▸ TRANSACTIONS</span>
+          <span className="text-[10px] text-[var(--dim)] num">SHOWING {filtered.length} OF {COMPS.length}</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-[12px]">
+            <thead><tr className="border-b border-[var(--border)] text-left">
+              {['DATE', 'SOURCE', 'CHANNEL', 'EQUIPMENT', 'YR', 'HRS', 'COND', 'LOCATION', 'SALE PRICE', '$/HR'].map(h => (
+                <th key={h} className="label px-4 py-2.5 font-medium">{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {filtered.map((c, i) => (
+                <tr key={i} className="row-hover border-b border-[var(--border)]">
+                  <td className="px-4 py-2.5 num text-[var(--muted)]">{c.date}</td>
+                  <td className="px-4 py-2.5 text-[var(--text)] text-[11px]">{c.source}</td>
+                  <td className="px-4 py-2.5"><span className={`text-[9px] tracking-wider px-1.5 py-0.5 ${c.channel === 'Auction' ? 'bg-[var(--bg-2)] text-[var(--amber)]' : 'bg-[var(--bg-2)] text-[var(--blue)]'}`}>{c.channel.toUpperCase()}</span></td>
+                  <td className="px-4 py-2.5"><span className="text-[var(--text)]">{c.make}</span> <span className="text-[var(--dim)]">{c.model}</span></td>
+                  <td className="px-4 py-2.5 num text-[var(--muted)]">{c.year}</td>
+                  <td className="px-4 py-2.5 num text-[var(--muted)]">{c.hours ? c.hours.toLocaleString() : '—'}</td>
+                  <td className="px-4 py-2.5 text-[var(--muted)] text-[11px]">{c.condition}</td>
+                  <td className="px-4 py-2.5 text-[var(--muted)] text-[11px]">{c.location}</td>
+                  <td className="px-4 py-2.5 num text-[var(--amber)]">{fmt(c.salePrice)}</td>
+                  <td className="px-4 py-2.5 num text-[var(--dim)] text-[11px]">{c.hours ? fmt(c.salePrice / c.hours) : '—'}</td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (<tr><td colSpan="10" className="px-4 py-12 text-center text-[var(--dim)]">No comps match filters.</td></tr>)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* sources */}
+      <div className="grid grid-cols-7 gap-px bg-[var(--border)]">
+        {['Ritchie Bros', 'Purple Wave', 'IronPlanet', 'BigIron', 'Machinery Trader', 'Equipment Trader', 'TruckPaper'].map(s => {
+          const n = COMPS.filter(c => c.source === s).length;
+          return (
+            <div key={s} className="bg-[var(--bg-1)] px-3 py-3 text-center">
+              <div className="text-[10px] text-[var(--text)]">{s}</div>
+              <div className="num text-[var(--amber)] text-[14px] mt-1">{n}</div>
+              <div className="text-[9px] text-[var(--green)] flex items-center justify-center gap-1 mt-0.5">
+                <span className="w-1 h-1 rounded-full bg-[var(--green)] pulse-dot"></span> SYNCED
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// =================== COVENANTS PAGE ===================
+function CovenantsPage({ onSelect }) {
+  // synthesize covenants per asset
+  const covenants = FLEET.flatMap(a => {
+    const r = ltv(a); const h = healthScore(a);
+    return [
+      { asset: a, type: 'Max LTV', threshold: 0.70, current: r, breached: r > 0.70, severity: r > 0.85 ? 'critical' : r > 0.70 ? 'warn' : 'ok', kind: 'ratio' },
+      { asset: a, type: 'Min Health', threshold: 50, current: h, breached: h < 50, severity: h < 30 ? 'critical' : h < 50 ? 'warn' : 'ok', kind: 'score' },
+      { asset: a, type: 'Max Hours', threshold: 10000, current: a.hours || 0, breached: (a.hours || 0) > 10000, severity: (a.hours || 0) > 10000 ? 'warn' : 'ok', kind: 'hours' },
+    ];
+  }).filter(c => c.threshold);
+
+  const breached = covenants.filter(c => c.breached);
+  const critical = covenants.filter(c => c.severity === 'critical');
+
+  const [tab, setTab] = useState('breached');
+  const lists = {
+    breached: breached,
+    critical: critical,
+    all: covenants,
+  };
+  const active = lists[tab];
+
+  return (
+    <div className="space-y-4 fade-up">
+      <div className="grid-card p-6">
+        <div className="label mb-2 text-[var(--amber)]">▸ COVENANT SURVEILLANCE</div>
+        <h1 className="mono text-3xl font-light">Loan Covenant Monitoring · Real-Time</h1>
+        <div className="text-[12px] text-[var(--muted)] mt-2 max-w-3xl">
+          Continuous surveillance of LTV, asset health, and utilization covenants across the entire portfolio.
+          Breach events generate immediate alerts and trigger configured workflow escalations.
+        </div>
+      </div>
+
+      <div className="grid grid-cols-4 gap-px bg-[var(--border)]">
+        <Stat label="Total Covenants" value={covenants.length} sub="across portfolio" />
+        <Stat label="In Breach" value={breached.length} sub={`${pct(breached.length / covenants.length)} of book`} accent="text-[var(--red)]" />
+        <Stat label="Critical" value={critical.length} sub="immediate attention" accent="text-[var(--red)]" />
+        <Stat label="Avg Cure Time" value="14d" sub="historical mean" />
+      </div>
+
+      <div className="flex gap-px">
+        {[{ k: 'breached', l: 'Breached' }, { k: 'critical', l: 'Critical Only' }, { k: 'all', l: 'All Covenants' }].map(t => (
+          <button key={t.k} onClick={() => setTab(t.k)} className={`px-4 py-2.5 text-[10px] tracking-[0.18em] uppercase ${tab === t.k ? 'bg-[var(--amber)] text-[var(--bg)]' : 'bg-[var(--bg-1)] text-[var(--dim)] hover:text-[var(--text)] border border-[var(--border)]'}`}>
+            {t.l} <span className="num ml-2 opacity-70">{lists[t.k].length}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="grid-card">
+        <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
+          <span className="label text-[var(--amber)]">▸ COVENANT REGISTRY</span>
+          <span className="text-[10px] text-[var(--dim)] num">{active.length} ROWS</span>
+        </div>
+        <table className="w-full text-[12px]">
+          <thead><tr className="border-b border-[var(--border)] text-left">
+            {['STATUS', 'ASSET', 'EQUIPMENT', 'BORROWER', 'COVENANT', 'THRESHOLD', 'CURRENT', 'GAP', 'ACTION'].map(h => (
+              <th key={h} className="label px-4 py-2.5 font-medium">{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {active.slice(0, 30).map((c, i) => {
+              const dot = c.severity === 'critical' ? 'var(--red)' : c.severity === 'warn' ? 'var(--amber)' : 'var(--green)';
+              const status = c.severity === 'critical' ? 'CRITICAL' : c.severity === 'warn' ? 'BREACH' : 'OK';
+              const fmtVal = (v) => c.kind === 'ratio' ? pct(v) : c.kind === 'score' ? Math.round(v) : v.toLocaleString() + ' hrs';
+              const fmtThresh = (v) => c.kind === 'ratio' ? pct(v) : c.kind === 'score' ? v : v.toLocaleString() + ' hrs';
+              const gap = c.kind === 'ratio' ? pct(c.current - c.threshold) : c.kind === 'score' ? `${Math.round(c.current - c.threshold)}` : `${(c.current - c.threshold).toLocaleString()}`;
+              return (
+                <tr key={i} onClick={() => onSelect(c.asset)} className="row-hover border-b border-[var(--border)] cursor-pointer">
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full ${c.severity === 'critical' ? 'pulse-dot' : ''}`} style={{ background: dot }}></div>
+                      <span className="text-[9px] tracking-wider" style={{ color: dot }}>{status}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2.5 num text-[var(--amber)]">{c.asset.id}</td>
+                  <td className="px-4 py-2.5"><span className="text-[var(--text)]">{c.asset.make}</span> <span className="text-[var(--dim)]">{c.asset.model}</span></td>
+                  <td className="px-4 py-2.5 text-[var(--muted)] text-[11px]">{c.asset.borrower}</td>
+                  <td className="px-4 py-2.5 text-[var(--text)]">{c.type}</td>
+                  <td className="px-4 py-2.5 num text-[var(--muted)]">{fmtThresh(c.threshold)}</td>
+                  <td className="px-4 py-2.5 num" style={{ color: c.breached ? 'var(--red)' : 'var(--green)' }}>{fmtVal(c.current)}</td>
+                  <td className="px-4 py-2.5 num text-[10px]" style={{ color: c.breached ? 'var(--red)' : 'var(--dim)' }}>{c.breached ? gap : '—'}</td>
+                  <td className="px-4 py-2.5">
+                    {c.breached && <button className="text-[9px] tracking-wider px-2 py-1 border border-[var(--amber)] text-[var(--amber)] hover:bg-[var(--amber)] hover:text-[var(--bg)] transition">ESCALATE</button>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* policy panel */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="grid-card p-4">
+          <div className="label mb-3 text-[var(--amber)]">▸ ACTIVE POLICY</div>
+          <div className="space-y-2.5 text-[11px]">
+            <div className="flex justify-between border-b border-[var(--border)] pb-2">
+              <span className="text-[var(--muted)]">Maximum Loan-to-Value</span>
+              <span className="text-[var(--text)] num">70%</span>
+            </div>
+            <div className="flex justify-between border-b border-[var(--border)] pb-2">
+              <span className="text-[var(--muted)]">Minimum Health Score</span>
+              <span className="text-[var(--text)] num">50</span>
+            </div>
+            <div className="flex justify-between border-b border-[var(--border)] pb-2">
+              <span className="text-[var(--muted)]">Max Hours (off-road)</span>
+              <span className="text-[var(--text)] num">10,000</span>
+            </div>
+            <div className="flex justify-between border-b border-[var(--border)] pb-2">
+              <span className="text-[var(--muted)]">Cure Period</span>
+              <span className="text-[var(--text)] num">30 days</span>
+            </div>
+            <div className="flex justify-between border-b border-[var(--border)] pb-2">
+              <span className="text-[var(--muted)]">Reappraisal Frequency</span>
+              <span className="text-[var(--text)] num">Quarterly</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[var(--muted)]">Field Inspection Trigger</span>
+              <span className="text-[var(--text)]">Health &lt; 30</span>
+            </div>
+          </div>
+        </div>
+        <div className="grid-card p-4">
+          <div className="label mb-3 text-[var(--amber)]">▸ RECENT EVENTS</div>
+          <div className="space-y-3 text-[11px]">
+            <div className="border-l-2 border-[var(--red)] pl-3">
+              <div className="text-[var(--text)] mb-0.5">VTX-0012 · LTV THRESHOLD BREACHED</div>
+              <div className="text-[var(--dim)] text-[10px]">Loan-to-value crossed 100% on quarterly revaluation</div>
+              <div className="text-[var(--dim)] text-[9px] mt-1 num">2026-04-19 03:14 UTC</div>
+            </div>
+            <div className="border-l-2 border-[var(--amber)] pl-3">
+              <div className="text-[var(--text)] mb-0.5">VTX-0007 · HEALTH SCORE WARNING</div>
+              <div className="text-[var(--dim)] text-[10px]">Health index dropped below 50 due to 9,140 hr utilization</div>
+              <div className="text-[var(--dim)] text-[9px] mt-1 num">2026-04-17 11:22 UTC</div>
+            </div>
+            <div className="border-l-2 border-[var(--green)] pl-3">
+              <div className="text-[var(--text)] mb-0.5">VTX-0002 · COVENANT CURED</div>
+              <div className="text-[var(--dim)] text-[10px]">LTV restored to within policy after partial paydown</div>
+              <div className="text-[var(--dim)] text-[9px] mt-1 num">2026-04-15 16:48 UTC</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =================== ASSET DRAWER ===================
 function AssetDrawer({ asset, onClose }) {
   const [vinData, setVinData] = useState(null);
   const [vinLoading, setVinLoading] = useState(false);
@@ -439,6 +967,7 @@ function AssetDrawer({ asset, onClose }) {
   const fmv = depreciate(asset.originalCost, asset.year, asset.hours, asset.type);
   const cv = olv(fmv); const lq = flv(fmv); const r = ltv(asset); const h = healthScore(asset); const lvl = alertLevel(asset);
   const history = useMemo(() => valuationHistory(asset), [asset]);
+  const assetComps = compsFor(asset);
 
   async function decodeVIN() {
     if (!asset.vin) return;
@@ -493,10 +1022,30 @@ function AssetDrawer({ asset, onClose }) {
             <span className="flex items-center gap-1.5"><span className="w-2 h-0.5 bg-[var(--blue)]"></span><span className="text-[var(--dim)]">LOAN</span></span>
           </div>
         </div>
+        {assetComps.length > 0 && (
+          <div className="border-b border-[var(--border)] p-4">
+            <div className="label mb-3 text-[var(--amber)]">▸ COMPARABLE SALES · {assetComps.length} FOUND</div>
+            <div className="space-y-1.5 text-[11px]">
+              {assetComps.slice(0, 4).map((c, i) => (
+                <div key={i} className="flex items-center justify-between border-b border-[var(--border)] pb-1.5">
+                  <div>
+                    <span className="text-[var(--text)]">{c.source}</span>
+                    <span className="text-[var(--dim)]"> · {c.location}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-[var(--dim)]">{c.condition}</span>
+                    <span className="num text-[var(--amber)]">{fmt(c.salePrice)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="border-b border-[var(--border)] p-4">
           <div className="label mb-3 text-[var(--amber)]">▸ OBLIGOR</div>
           <div className="grid grid-cols-2 gap-y-2 text-[11px]">
             <div className="text-[var(--dim)]">Borrower</div><div className="text-[var(--text)]">{asset.borrower}</div>
+            <div className="text-[var(--dim)]">Lender</div><div className="text-[var(--text)]">{asset.lender}</div>
             <div className="text-[var(--dim)]">Location</div><div className="text-[var(--text)]">{asset.location}</div>
             <div className="text-[var(--dim)]">Serial / VIN</div><div className="text-[var(--text)] num">{asset.vin || asset.serial}</div>
             <div className="text-[var(--dim)]">OFAC Screen</div><div className="text-[var(--green)]">✓ CLEAR · {new Date().toLocaleDateString()}</div>
@@ -511,9 +1060,7 @@ function AssetDrawer({ asset, onClose }) {
                 {vinLoading ? 'QUERYING...' : 'DECODE VIN →'}
               </button>
             </div>
-            {!vinData && !vinLoading && !vinError && (
-              <div className="text-[11px] text-[var(--dim)]">Click DECODE VIN to query the public NHTSA vPIC API in real time.<div className="num text-[var(--muted)] mt-1">VIN: {asset.vin}</div></div>
-            )}
+            {!vinData && !vinLoading && !vinError && (<div className="text-[11px] text-[var(--dim)]">Click DECODE VIN to query the public NHTSA vPIC API in real time.<div className="num text-[var(--muted)] mt-1">VIN: {asset.vin}</div></div>)}
             {vinLoading && <div className="text-[11px] text-[var(--amber)] blink">▸ querying vpic.nhtsa.dot.gov ...</div>}
             {vinError && <div className="text-[11px] text-[var(--red)]">⚠ {vinError}</div>}
             {vinData && (
@@ -538,25 +1085,42 @@ function AssetDrawer({ asset, onClose }) {
   );
 }
 
+// =================== APP ===================
 function App() {
+  const [authed, setAuthed] = useState(false);
   const [now, setNow] = useState(new Date());
   const [selected, setSelected] = useState(null);
-  const [filter, setFilter] = useState('all');
-  useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
+  const [route, setRoute] = useState('portfolio');
+
+  useEffect(() => {
+    setAuthed(sessionStorage.getItem('vtx-auth') === '1');
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  function logout() {
+    sessionStorage.removeItem('vtx-auth');
+    setAuthed(false);
+  }
+
+  if (!authed) return <PasswordGate onUnlock={() => setAuthed(true)} />;
+
   return (
     <div className="min-h-screen relative">
-      <Header now={now} />
-      <div className="relative z-10 p-4 space-y-4">
-        <PortfolioStrip assets={FLEET} />
-        <div className="grid grid-cols-3 gap-4">
-          <div className="col-span-2"><PortfolioChart assets={FLEET} /></div>
-          <div><MacroPanel /></div>
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="col-span-2"><FleetTable assets={FLEET} onSelect={setSelected} filter={filter} setFilter={setFilter} /></div>
-          <div><AlertsPanel assets={FLEET} /></div>
-        </div>
-        <div className="grid-card px-4 py-3 flex items-center justify-between text-[10px]">
+      <Header now={now} route={route} setRoute={setRoute} onLogout={logout} />
+      <div className="relative z-10 p-4">
+        {route === 'portfolio' && <PortfolioPage onSelect={setSelected} />}
+        {route === 'watchlist' && <WatchlistPage onSelect={setSelected} />}
+        {route === 'comps' && <CompsPage />}
+        {route === 'covenants' && <CovenantsPage onSelect={setSelected} />}
+        {route === 'reports' && (
+          <div className="grid-card p-12 text-center fade-up">
+            <div className="label mb-2 text-[var(--amber)]">▸ REPORTS</div>
+            <div className="mono text-2xl font-light mb-2">Module in development</div>
+            <div className="text-[12px] text-[var(--muted)]">PDF appraisal export, quarterly portfolio reports, regulatory packages.</div>
+          </div>
+        )}
+        <div className="grid-card px-4 py-3 mt-4 flex items-center justify-between text-[10px]">
           <div className="flex gap-6 text-[var(--dim)]">
             <span><span className="text-[var(--green)]">●</span> NHTSA vPIC <span className="text-[var(--green)]">CONNECTED</span></span>
             <span><span className="text-[var(--green)]">●</span> MarketCheck <span className="text-[var(--muted)]">READY</span></span>
@@ -564,7 +1128,7 @@ function App() {
             <span><span className="text-[var(--green)]">●</span> Traccar <span className="text-[var(--muted)]">READY</span></span>
             <span><span className="text-[var(--green)]">●</span> NOAA · FRED · OFAC <span className="text-[var(--muted)]">READY</span></span>
           </div>
-          <div className="text-[var(--dim)] num">VALTRAX · v0.1.0-demo · {new Date().toISOString().split('T')[0]}</div>
+          <div className="text-[var(--dim)] num">VALTRAX · v0.2.0-demo · {new Date().toISOString().split('T')[0]}</div>
         </div>
       </div>
       <AssetDrawer asset={selected} onClose={() => setSelected(null)} />
