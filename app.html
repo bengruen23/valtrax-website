@@ -7,12 +7,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script crossorigin src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
-<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js"></script>
 <style>
   :root {
     --bg: #0a0e14;
@@ -49,70 +47,27 @@
     z-index: 0;
   }
   .mono { font-family: 'IBM Plex Mono', monospace; }
-  .sans { font-family: 'IBM Plex Sans', sans-serif; }
   .num { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
-  @keyframes pulse-dot {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.85); }
-  }
+  @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
   .pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
-  @keyframes ticker-scroll {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-  }
+  @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
   .ticker-track { animation: ticker-scroll 60s linear infinite; }
-  @keyframes flicker-in {
-    0% { opacity: 0; }
-    20% { opacity: 1; }
-    25% { opacity: 0.4; }
-    35% { opacity: 1; }
-    40% { opacity: 0.6; }
-    100% { opacity: 1; }
-  }
+  @keyframes flicker-in { 0% { opacity: 0; } 20% { opacity: 1; } 25% { opacity: 0.4; } 35% { opacity: 1; } 40% { opacity: 0.6; } 100% { opacity: 1; } }
   .flicker { animation: flicker-in 0.8s ease-out; }
-  @keyframes slide-in-right {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
+  @keyframes slide-in-right { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   .slide-in { animation: slide-in-right 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg-1); }
-  ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 0; }
+  ::-webkit-scrollbar-thumb { background: var(--border-2); }
   ::-webkit-scrollbar-thumb:hover { background: var(--amber-dim); }
   .row-hover:hover { background: var(--bg-2); }
   .row-hover:hover .row-arrow { color: var(--amber); transform: translateX(2px); }
   .row-arrow { transition: all 150ms ease; color: var(--dim); }
-  .grid-card {
-    background: var(--bg-1);
-    border: 1px solid var(--border);
-    position: relative;
-  }
-  .grid-card::before {
-    content: '';
-    position: absolute; top: 0; left: 0;
-    width: 8px; height: 1px;
-    background: var(--amber);
-  }
-  .corner-tl::before, .corner-tr::after, .corner-bl::before, .corner-br::after { display: none; }
-  .label {
-    font-size: 9px;
-    letter-spacing: 0.18em;
-    color: var(--dim);
-    text-transform: uppercase;
-    font-weight: 500;
-  }
-  .health-bar {
-    height: 4px;
-    background: var(--bg-2);
-    position: relative;
-    overflow: hidden;
-  }
-  .health-bar-fill {
-    height: 100%;
-    transition: width 600ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  details > summary { list-style: none; cursor: pointer; }
-  details > summary::-webkit-details-marker { display: none; }
+  .grid-card { background: var(--bg-1); border: 1px solid var(--border); position: relative; }
+  .grid-card::before { content: ''; position: absolute; top: 0; left: 0; width: 8px; height: 1px; background: var(--amber); }
+  .label { font-size: 9px; letter-spacing: 0.18em; color: var(--dim); text-transform: uppercase; font-weight: 500; }
+  .health-bar { height: 4px; background: var(--bg-2); position: relative; overflow: hidden; }
+  .health-bar-fill { height: 100%; transition: width 600ms cubic-bezier(0.22, 1, 0.36, 1); }
   .blink { animation: blink 1.2s steps(2) infinite; }
   @keyframes blink { 50% { opacity: 0.3; } }
 </style>
@@ -121,13 +76,8 @@
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useEffect, useMemo, useRef } = React;
-const {
-  LineChart, Line, AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine
-} = Recharts;
+const { useState, useEffect, useMemo } = React;
 
-// ============ SEED DATA ============
 const FLEET = [
   { id: 'VTX-0001', type: 'Excavator', make: 'Caterpillar', model: '320', year: 2019, hours: 4820, vin: null, serial: 'CAT0320LC123456', originalCost: 285000, location: 'Tampa, FL', borrower: 'Sunshine Construction LLC', loanBalance: 142000, originAdvance: 199500 },
   { id: 'VTX-0002', type: 'Skid Steer', make: 'Bobcat', model: 'S650', year: 2020, hours: 2940, vin: null, serial: 'BCT650S987654', originalCost: 58000, location: 'Orlando, FL', borrower: 'Citrus Grading Co', loanBalance: 28500, originAdvance: 40600 },
@@ -141,46 +91,37 @@ const FLEET = [
   { id: 'VTX-0010', type: 'Truck', make: 'Peterbilt', model: '579', year: 2020, hours: null, vin: '1XPBDP9X8LD123456', serial: null, originalCost: 165000, location: 'Lakeland, FL', borrower: 'Central FL Trucking', loanBalance: 82000, originAdvance: 115500 },
   { id: 'VTX-0011', type: 'Forklift', make: 'Toyota', model: '8FGU25', year: 2019, hours: 3240, vin: null, serial: 'TOY8FGU25445566', originalCost: 32000, location: 'Orlando, FL', borrower: 'Theme Park Logistics', loanBalance: 11500, originAdvance: 22400 },
   { id: 'VTX-0012', type: 'Bulldozer', make: 'Caterpillar', model: 'D6T', year: 2014, hours: 11200, vin: null, serial: 'CATD6T990011', originalCost: 380000, location: 'Naples, FL', borrower: 'Collier Land Clearing', loanBalance: 28000, originAdvance: 266000 },
-  { id: 'VTX-0013', type: 'Wheel Loader', make: 'Volvo', model: 'L90H', year: 2020, hours: 3120, vin: null, serial: 'VLV L90H334455', originalCost: 220000, location: 'Tampa, FL', borrower: 'Tampa Bay Aggregates', loanBalance: 118000, originAdvance: 154000 },
+  { id: 'VTX-0013', type: 'Wheel Loader', make: 'Volvo', model: 'L90H', year: 2020, hours: 3120, vin: null, serial: 'VLVL90H334455', originalCost: 220000, location: 'Tampa, FL', borrower: 'Tampa Bay Aggregates', loanBalance: 118000, originAdvance: 154000 },
   { id: 'VTX-0014', type: 'Excavator', make: 'Hitachi', model: 'ZX350', year: 2018, hours: 6840, vin: null, serial: 'HIT350ZX667788', originalCost: 295000, location: 'Daytona Beach, FL', borrower: 'East Coast Excavation', loanBalance: 79000, originAdvance: 206500 },
   { id: 'VTX-0015', type: 'Truck', make: 'Kenworth', model: 'T880', year: 2019, hours: null, vin: '1XKZD49X9KJ987654', serial: null, originalCost: 142000, location: 'Tallahassee, FL', borrower: 'Capital City Hauling', loanBalance: 46000, originAdvance: 99400 },
 ];
 
-// ============ COMPUTED HELPERS ============
 function depreciate(orig, year, hours, type) {
   const ageYears = 2026 - year;
-  // straight-line floor + hours-based decay for off-road
   const ageDecay = Math.max(0, 1 - ageYears * 0.07);
   const hoursDecay = hours ? Math.max(0.25, 1 - (hours / 12000) * 0.55) : 1;
-  // trucks depreciate on miles/age, equipment on hours
   const fmv = type === 'Truck' ? orig * ageDecay * 0.92 : orig * ageDecay * hoursDecay;
   return Math.round(fmv);
 }
 function olv(fmv) { return Math.round(fmv * 0.78); }
 function flv(fmv) { return Math.round(fmv * 0.62); }
-
 function healthScore(asset) {
   const ageYears = 2026 - asset.year;
   const ageHealth = Math.max(0, 100 - ageYears * 6);
   const hoursHealth = asset.hours ? Math.max(0, 100 - (asset.hours / 12000) * 100) : 90;
   return Math.round((ageHealth * 0.35 + hoursHealth * 0.65));
 }
-
 function ltv(asset) {
   const fmv = depreciate(asset.originalCost, asset.year, asset.hours, asset.type);
-  const collateralValue = olv(fmv);
-  return collateralValue > 0 ? asset.loanBalance / collateralValue : 0;
+  const cv = olv(fmv);
+  return cv > 0 ? asset.loanBalance / cv : 0;
 }
-
 function alertLevel(asset) {
-  const r = ltv(asset);
-  const h = healthScore(asset);
+  const r = ltv(asset); const h = healthScore(asset);
   if (r > 0.85 || h < 30) return 'critical';
   if (r > 0.70 || h < 50) return 'warn';
   return 'ok';
 }
-
-// 24-month historical valuation curve for the drawer
 function valuationHistory(asset) {
   const fmv = depreciate(asset.originalCost, asset.year, asset.hours, asset.type);
   const out = [];
@@ -188,25 +129,62 @@ function valuationHistory(asset) {
     const monthlyDecay = 1 - (i * 0.008) - (Math.sin(i / 3) * 0.012);
     const noise = 1 + (Math.random() - 0.5) * 0.025;
     const v = fmv * monthlyDecay * noise;
-    out.push({
-      month: `M-${i}`,
-      fmv: Math.round(v),
-      olv: Math.round(v * 0.78),
-      loan: Math.round(asset.loanBalance * (1 + i * 0.018)),
-    });
+    out.push({ month: 23 - i, fmv: Math.round(v), olv: Math.round(v * 0.78), loan: Math.round(asset.loanBalance * (1 + i * 0.018)) });
   }
   return out;
 }
-
 const fmt = (n) => '$' + Math.round(n).toLocaleString('en-US');
-const fmtM = (n) => {
-  if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
-  if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K';
-  return '$' + Math.round(n);
-};
+const fmtM = (n) => { if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M'; if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K'; return '$' + Math.round(n); };
 const pct = (n) => (n * 100).toFixed(1) + '%';
 
-// ============ COMPONENTS ============
+// =========== INLINE SVG CHART (no library) ===========
+function LineChart({ data, keys, height = 220, width = 700 }) {
+  if (!data || data.length === 0) return null;
+  const padL = 50, padR = 15, padT = 15, padB = 25;
+  const chartW = width - padL - padR;
+  const chartH = height - padT - padB;
+  const allVals = data.flatMap(d => keys.map(k => d[k.key]));
+  const minY = Math.min(...allVals) * 0.92;
+  const maxY = Math.max(...allVals) * 1.08;
+  const xStep = chartW / (data.length - 1);
+  const yScale = (v) => padT + chartH - ((v - minY) / (maxY - minY)) * chartH;
+  const xScale = (i) => padL + i * xStep;
+
+  const yTicks = 4;
+  const tickVals = Array.from({length: yTicks + 1}, (_, i) => minY + (maxY - minY) * (i / yTicks));
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full" preserveAspectRatio="none">
+      {/* gridlines */}
+      {tickVals.map((v, i) => (
+        <g key={i}>
+          <line x1={padL} x2={width - padR} y1={yScale(v)} y2={yScale(v)} stroke="#1f2937" strokeDasharray="2 4" />
+          <text x={padL - 8} y={yScale(v) + 3} fill="#6b7785" fontSize="9" textAnchor="end" fontFamily="IBM Plex Mono">
+            ${(v / 1000).toFixed(0)}K
+          </text>
+        </g>
+      ))}
+      {/* x labels */}
+      {data.map((d, i) => i % 4 === 0 && (
+        <text key={i} x={xScale(i)} y={height - 8} fill="#6b7785" fontSize="9" textAnchor="middle" fontFamily="IBM Plex Mono">
+          {i === data.length - 1 ? 'NOW' : `-${data.length - 1 - i}M`}
+        </text>
+      ))}
+      {/* lines */}
+      {keys.map(k => {
+        const path = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${xScale(i)} ${yScale(d[k.key])}`).join(' ');
+        const areaPath = k.fill ? `${path} L ${xScale(data.length - 1)} ${padT + chartH} L ${xScale(0)} ${padT + chartH} Z` : null;
+        return (
+          <g key={k.key}>
+            {areaPath && <path d={areaPath} fill={k.fill} opacity="0.15" />}
+            <path d={path} fill="none" stroke={k.color} strokeWidth={k.width || 1.5} strokeDasharray={k.dash || ''} />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function Header({ now }) {
   return (
     <div className="border-b border-[var(--border)] bg-[var(--bg-1)] relative z-10">
@@ -231,19 +209,13 @@ function Header({ now }) {
             <span className="text-[var(--dim)]">FEED</span>
             <span className="text-[var(--green)]">LIVE</span>
           </div>
-          <div className="text-[var(--dim)] num">
-            {now.toUTCString().split(' ').slice(1, 5).join(' ')} UTC
-          </div>
-          <div className="px-2 py-1 border border-[var(--border-2)] text-[var(--muted)]">
-            BG / DEMO
-          </div>
+          <div className="text-[var(--dim)] num">{now.toUTCString().split(' ').slice(1, 5).join(' ')} UTC</div>
+          <div className="px-2 py-1 border border-[var(--border-2)] text-[var(--muted)]">BG / DEMO</div>
         </div>
       </div>
-
-      {/* TICKER */}
       <div className="border-t border-[var(--border)] bg-[var(--bg)] overflow-hidden">
         <div className="flex ticker-track whitespace-nowrap py-1.5 text-[11px] num">
-          {[...Array(2)].map((_, dup) => (
+          {[0, 1].map(dup => (
             <div key={dup} className="flex gap-8 px-4">
               <span><span className="text-[var(--dim)]">CAT320 FMV</span> <span className="text-[var(--green)]">$142K</span> <span className="text-[var(--green)]">+0.4%</span></span>
               <span><span className="text-[var(--dim)]">DEERE 850K OLV</span> <span className="text-[var(--red)]">$198K</span> <span className="text-[var(--red)]">-1.2%</span></span>
@@ -253,7 +225,7 @@ function Header({ now }) {
               <span><span className="text-[var(--dim)]">CONSTR PPI</span> <span className="text-[var(--amber)]">324.6</span> <span className="text-[var(--green)]">+0.3%</span></span>
               <span><span className="text-[var(--dim)]">BOBCAT S650</span> <span className="text-[var(--green)]">$41K</span> <span className="text-[var(--green)]">+0.6%</span></span>
               <span><span className="text-[var(--dim)]">PETERBILT 579</span> <span className="text-[var(--red)]">$94K</span> <span className="text-[var(--red)]">-0.4%</span></span>
-              <span><span className="text-[var(--dim)]">FRED FEDFUNDS</span> <span className="text-[var(--text)]">4.33%</span></span>
+              <span><span className="text-[var(--dim)]">FED FUNDS</span> <span className="text-[var(--text)]">4.33%</span></span>
               <span><span className="text-[var(--dim)]">RBA AUCTION VOL</span> <span className="text-[var(--green)]">$2.1B</span> <span className="text-[var(--green)]">+8.2%</span></span>
             </div>
           ))}
@@ -278,18 +250,15 @@ function PortfolioStrip({ assets }) {
     let fmv = 0, col = 0, exp = 0, alerts = 0;
     assets.forEach(a => {
       const f = depreciate(a.originalCost, a.year, a.hours, a.type);
-      fmv += f;
-      col += olv(f);
-      exp += a.loanBalance;
+      fmv += f; col += olv(f); exp += a.loanBalance;
       if (alertLevel(a) !== 'ok') alerts++;
     });
     return { fmv, col, exp, alerts, ltv: exp / col };
   }, [assets]);
-
   return (
     <div className="grid grid-cols-5 gap-px bg-[var(--border)]">
       <Stat label="Portfolio FMV" value={fmtM(stats.fmv)} sub={`${assets.length} assets monitored`} accent="text-[var(--amber)]" />
-      <Stat label="Collateral Value (OLV)" value={fmtM(stats.col)} sub="78% of FMV blended" accent="text-[var(--text)]" />
+      <Stat label="Collateral Value (OLV)" value={fmtM(stats.col)} sub="78% of FMV blended" />
       <Stat label="Loan Exposure" value={fmtM(stats.exp)} sub="aggregate balance" />
       <Stat label="Portfolio LTV" value={pct(stats.ltv)} sub={stats.ltv > 0.7 ? "above policy" : "within policy"} accent={stats.ltv > 0.7 ? 'text-[var(--red)]' : 'text-[var(--green)]'} />
       <Stat label="Active Alerts" value={String(stats.alerts).padStart(2, '0')} sub="covenant + health" accent={stats.alerts > 0 ? 'text-[var(--red)]' : 'text-[var(--green)]'} />
@@ -301,9 +270,7 @@ function HealthBar({ score }) {
   const color = score >= 70 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)';
   return (
     <div className="flex items-center gap-2 w-32">
-      <div className="health-bar flex-1">
-        <div className="health-bar-fill" style={{ width: `${score}%`, background: color }}></div>
-      </div>
+      <div className="health-bar flex-1"><div className="health-bar-fill" style={{ width: `${score}%`, background: color }}></div></div>
       <span className="num text-[11px]" style={{ color }}>{score}</span>
     </div>
   );
@@ -315,9 +282,7 @@ function FleetTable({ assets, onSelect, filter, setFilter }) {
     if (filter === 'alerts') return assets.filter(a => alertLevel(a) !== 'ok');
     return assets.filter(a => a.type.toLowerCase() === filter);
   }, [assets, filter]);
-
   const types = ['all', 'alerts', 'excavator', 'truck', 'skid steer', 'bulldozer', 'wheel loader', 'crane', 'forklift'];
-
   return (
     <div className="grid-card">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
@@ -327,12 +292,7 @@ function FleetTable({ assets, onSelect, filter, setFilter }) {
         </div>
         <div className="flex gap-px text-[10px]">
           {types.map(t => (
-            <button
-              key={t}
-              onClick={() => setFilter(t)}
-              className={`px-2.5 py-1 uppercase tracking-wider transition ${filter === t ? 'bg-[var(--amber)] text-[var(--bg)]' : 'bg-[var(--bg-2)] text-[var(--dim)] hover:text-[var(--text)]'}`}>
-              {t}
-            </button>
+            <button key={t} onClick={() => setFilter(t)} className={`px-2.5 py-1 uppercase tracking-wider transition ${filter === t ? 'bg-[var(--amber)] text-[var(--bg)]' : 'bg-[var(--bg-2)] text-[var(--dim)] hover:text-[var(--text)]'}`}>{t}</button>
           ))}
         </div>
       </div>
@@ -348,33 +308,22 @@ function FleetTable({ assets, onSelect, filter, setFilter }) {
           <tbody>
             {filtered.map(a => {
               const fmv = depreciate(a.originalCost, a.year, a.hours, a.type);
-              const collateralValue = olv(fmv);
-              const ratio = ltv(a);
-              const lvl = alertLevel(a);
+              const cv = olv(fmv); const r = ltv(a); const lvl = alertLevel(a);
               const dotColor = lvl === 'critical' ? 'var(--red)' : lvl === 'warn' ? 'var(--amber)' : 'var(--green)';
               return (
-                <tr
-                  key={a.id}
-                  onClick={() => onSelect(a)}
-                  className="row-hover border-b border-[var(--border)] cursor-pointer transition">
+                <tr key={a.id} onClick={() => onSelect(a)} className="row-hover border-b border-[var(--border)] cursor-pointer">
                   <td className="px-4 py-2.5 num text-[var(--amber)]">
                     <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full" style={{ background: dotColor }}></div>
-                      {a.id}
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ background: dotColor }}></div>{a.id}
                     </div>
                   </td>
-                  <td className="px-4 py-2.5">
-                    <span className="text-[var(--text)]">{a.make}</span>{' '}
-                    <span className="text-[var(--dim)]">{a.model}</span>
-                  </td>
+                  <td className="px-4 py-2.5"><span className="text-[var(--text)]">{a.make}</span> <span className="text-[var(--dim)]">{a.model}</span></td>
                   <td className="px-4 py-2.5 num text-[var(--muted)]">{a.year}</td>
                   <td className="px-4 py-2.5 num text-[var(--muted)]">{a.hours ? a.hours.toLocaleString() : '—'}</td>
                   <td className="px-4 py-2.5 num text-[var(--text)]">{fmtM(fmv)}</td>
-                  <td className="px-4 py-2.5 num text-[var(--muted)]">{fmtM(collateralValue)}</td>
+                  <td className="px-4 py-2.5 num text-[var(--muted)]">{fmtM(cv)}</td>
                   <td className="px-4 py-2.5 num text-[var(--muted)]">{fmtM(a.loanBalance)}</td>
-                  <td className="px-4 py-2.5 num" style={{ color: ratio > 0.85 ? 'var(--red)' : ratio > 0.70 ? 'var(--amber)' : 'var(--green)' }}>
-                    {pct(ratio)}
-                  </td>
+                  <td className="px-4 py-2.5 num" style={{ color: r > 0.85 ? 'var(--red)' : r > 0.70 ? 'var(--amber)' : 'var(--green)' }}>{pct(r)}</td>
                   <td className="px-4 py-2.5"><HealthBar score={healthScore(a)} /></td>
                   <td className="px-4 py-2.5 text-[var(--muted)] text-[11px]">{a.borrower}</td>
                   <td className="px-4 py-2.5 row-arrow">→</td>
@@ -389,11 +338,7 @@ function FleetTable({ assets, onSelect, filter, setFilter }) {
 }
 
 function AlertsPanel({ assets }) {
-  const alerts = assets
-    .map(a => ({ a, lvl: alertLevel(a), r: ltv(a), h: healthScore(a) }))
-    .filter(x => x.lvl !== 'ok')
-    .sort((x, y) => y.r - x.r);
-
+  const alerts = assets.map(a => ({ a, lvl: alertLevel(a), r: ltv(a), h: healthScore(a) })).filter(x => x.lvl !== 'ok').sort((x, y) => y.r - x.r);
   return (
     <div className="grid-card h-full">
       <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
@@ -405,9 +350,7 @@ function AlertsPanel({ assets }) {
           <div key={a.id} className="px-4 py-3 hover:bg-[var(--bg-2)] cursor-pointer">
             <div className="flex items-center justify-between mb-1">
               <span className="num text-[var(--amber)] text-[11px]">{a.id}</span>
-              <span className={`text-[9px] tracking-wider px-1.5 py-0.5 ${lvl === 'critical' ? 'bg-[var(--red)] text-[var(--bg)]' : 'border border-[var(--amber)] text-[var(--amber)]'}`}>
-                {lvl === 'critical' ? 'CRITICAL' : 'WATCH'}
-              </span>
+              <span className={`text-[9px] tracking-wider px-1.5 py-0.5 ${lvl === 'critical' ? 'bg-[var(--red)] text-[var(--bg)]' : 'border border-[var(--amber)] text-[var(--amber)]'}`}>{lvl === 'critical' ? 'CRITICAL' : 'WATCH'}</span>
             </div>
             <div className="text-[11px] text-[var(--text)] mb-0.5">{a.make} {a.model} • {a.year}</div>
             <div className="text-[10px] text-[var(--dim)]">{a.borrower}</div>
@@ -417,16 +360,13 @@ function AlertsPanel({ assets }) {
             </div>
           </div>
         ))}
-        {alerts.length === 0 && (
-          <div className="px-4 py-8 text-center text-[var(--dim)] text-[11px]">NO ACTIVE ALERTS</div>
-        )}
+        {alerts.length === 0 && <div className="px-4 py-8 text-center text-[var(--dim)] text-[11px]">NO ACTIVE ALERTS</div>}
       </div>
     </div>
   );
 }
 
 function MacroPanel() {
-  // FRED-style macro context (static values for demo, would be live from FRED API)
   const series = [
     { label: 'CONSTR PPI (BLS)', val: '324.6', delta: '+0.3%', color: 'var(--green)' },
     { label: 'DIESEL #2 RETAIL', val: '$3.84', delta: '-0.8%', color: 'var(--green)' },
@@ -457,7 +397,6 @@ function MacroPanel() {
 }
 
 function PortfolioChart({ assets }) {
-  // synthesize a 24-month aggregate FMV/Loan curve
   const data = useMemo(() => {
     const out = [];
     for (let i = 23; i >= 0; i--) {
@@ -469,15 +408,10 @@ function PortfolioChart({ assets }) {
         fmv += baseFmv * decay * noise;
         loan += a.loanBalance * (1 + i * 0.012);
       });
-      out.push({
-        month: i === 0 ? 'NOW' : `-${i}M`,
-        fmv: Math.round(fmv / 1e6 * 10) / 10,
-        loan: Math.round(loan / 1e6 * 10) / 10,
-      });
+      out.push({ month: 23 - i, fmv: Math.round(fmv), loan: Math.round(loan) });
     }
     return out;
   }, [assets]);
-
   return (
     <div className="grid-card h-full">
       <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
@@ -487,27 +421,11 @@ function PortfolioChart({ assets }) {
           <span className="flex items-center gap-1.5"><span className="w-2 h-0.5 bg-[var(--blue)]"></span><span className="text-[var(--dim)]">LOAN</span></span>
         </div>
       </div>
-      <div className="p-3 h-[260px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
-            <defs>
-              <linearGradient id="fmvg" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ffb000" stopOpacity={0.25} />
-                <stop offset="100%" stopColor="#ffb000" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke="#1f2937" strokeDasharray="2 4" vertical={false} />
-            <XAxis dataKey="month" stroke="#6b7785" tick={{ fontSize: 10, fontFamily: 'IBM Plex Mono' }} />
-            <YAxis stroke="#6b7785" tick={{ fontSize: 10, fontFamily: 'IBM Plex Mono' }} tickFormatter={(v) => `$${v}M`} />
-            <Tooltip
-              contentStyle={{ background: '#0f1419', border: '1px solid #2a3441', fontFamily: 'IBM Plex Mono', fontSize: 11 }}
-              labelStyle={{ color: '#ffb000' }}
-              formatter={(v) => [`$${v}M`, '']}
-            />
-            <Area type="monotone" dataKey="fmv" stroke="#ffb000" strokeWidth={1.5} fill="url(#fmvg)" />
-            <Line type="monotone" dataKey="loan" stroke="#4d9fff" strokeWidth={1.5} dot={false} />
-          </AreaChart>
-        </ResponsiveContainer>
+      <div className="p-3" style={{ height: 260 }}>
+        <LineChart data={data} keys={[
+          { key: 'fmv', color: '#ffb000', fill: '#ffb000', width: 1.8 },
+          { key: 'loan', color: '#4d9fff', width: 1.5 },
+        ]} height={240} width={700} />
       </div>
     </div>
   );
@@ -517,15 +435,9 @@ function AssetDrawer({ asset, onClose }) {
   const [vinData, setVinData] = useState(null);
   const [vinLoading, setVinLoading] = useState(false);
   const [vinError, setVinError] = useState(null);
-
   if (!asset) return null;
-
   const fmv = depreciate(asset.originalCost, asset.year, asset.hours, asset.type);
-  const collateralValue = olv(fmv);
-  const liqValue = flv(fmv);
-  const r = ltv(asset);
-  const h = healthScore(asset);
-  const lvl = alertLevel(asset);
+  const cv = olv(fmv); const lq = flv(fmv); const r = ltv(asset); const h = healthScore(asset); const lvl = alertLevel(asset);
   const history = useMemo(() => valuationHistory(asset), [asset]);
 
   async function decodeVIN() {
@@ -536,24 +448,16 @@ function AssetDrawer({ asset, onClose }) {
       const json = await res.json();
       const fields = ['Make', 'Model', 'Model Year', 'Body Class', 'Vehicle Type', 'Manufacturer Name', 'Plant Country', 'Engine Configuration', 'Engine Number of Cylinders', 'Displacement (L)', 'Fuel Type - Primary', 'GVWR'];
       const map = {};
-      json.Results.forEach(r => {
-        if (fields.includes(r.Variable) && r.Value && r.Value !== 'Not Applicable') {
-          map[r.Variable] = r.Value;
-        }
-      });
+      json.Results.forEach(rr => { if (fields.includes(rr.Variable) && rr.Value && rr.Value !== 'Not Applicable') map[rr.Variable] = rr.Value; });
       setVinData(map);
-    } catch (e) {
-      setVinError('NHTSA API unreachable');
-    } finally {
-      setVinLoading(false);
-    }
+    } catch (e) { setVinError('NHTSA API unreachable'); }
+    finally { setVinLoading(false); }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex" onClick={onClose}>
       <div className="flex-1 bg-black/60"></div>
       <div className="w-[640px] bg-[var(--bg)] border-l border-[var(--border)] slide-in overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        {/* Drawer header */}
         <div className="border-b border-[var(--border)] px-5 py-4 flex items-start justify-between sticky top-0 bg-[var(--bg)] z-10">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -566,104 +470,52 @@ function AssetDrawer({ asset, onClose }) {
           </div>
           <button onClick={onClose} className="text-[var(--dim)] hover:text-[var(--amber)] text-xl leading-none">×</button>
         </div>
-
-        {/* Valuation grid */}
         <div className="grid grid-cols-3 gap-px bg-[var(--border)]">
-          <div className="bg-[var(--bg-1)] px-4 py-3">
-            <div className="label mb-1">FMV</div>
-            <div className="mono text-xl text-[var(--amber)] num">{fmtM(fmv)}</div>
-            <div className="text-[10px] text-[var(--dim)] num mt-0.5">vs. orig {fmtM(asset.originalCost)}</div>
-          </div>
-          <div className="bg-[var(--bg-1)] px-4 py-3">
-            <div className="label mb-1">OLV (collat)</div>
-            <div className="mono text-xl text-[var(--text)] num">{fmtM(collateralValue)}</div>
-            <div className="text-[10px] text-[var(--dim)] num mt-0.5">78% of FMV</div>
-          </div>
-          <div className="bg-[var(--bg-1)] px-4 py-3">
-            <div className="label mb-1">FLV (forced)</div>
-            <div className="mono text-xl text-[var(--muted)] num">{fmtM(liqValue)}</div>
-            <div className="text-[10px] text-[var(--dim)] num mt-0.5">62% of FMV</div>
-          </div>
-          <div className="bg-[var(--bg-1)] px-4 py-3">
-            <div className="label mb-1">Loan Balance</div>
-            <div className="mono text-xl text-[var(--text)] num">{fmtM(asset.loanBalance)}</div>
-            <div className="text-[10px] text-[var(--dim)] num mt-0.5">orig adv {fmtM(asset.originAdvance)}</div>
-          </div>
-          <div className="bg-[var(--bg-1)] px-4 py-3">
-            <div className="label mb-1">LTV</div>
-            <div className="mono text-xl num" style={{ color: r > 0.85 ? 'var(--red)' : r > 0.70 ? 'var(--amber)' : 'var(--green)' }}>{pct(r)}</div>
-            <div className="text-[10px] text-[var(--dim)] num mt-0.5">policy ≤ 70%</div>
-          </div>
-          <div className="bg-[var(--bg-1)] px-4 py-3">
-            <div className="label mb-1">Health Index</div>
-            <div className="mono text-xl num" style={{ color: h >= 70 ? 'var(--green)' : h >= 50 ? 'var(--amber)' : 'var(--red)' }}>{h}</div>
-            <div className="text-[10px] text-[var(--dim)] mt-0.5">age + utilization</div>
-          </div>
+          <div className="bg-[var(--bg-1)] px-4 py-3"><div className="label mb-1">FMV</div><div className="mono text-xl text-[var(--amber)] num">{fmtM(fmv)}</div><div className="text-[10px] text-[var(--dim)] num mt-0.5">vs orig {fmtM(asset.originalCost)}</div></div>
+          <div className="bg-[var(--bg-1)] px-4 py-3"><div className="label mb-1">OLV (collat)</div><div className="mono text-xl text-[var(--text)] num">{fmtM(cv)}</div><div className="text-[10px] text-[var(--dim)] num mt-0.5">78% of FMV</div></div>
+          <div className="bg-[var(--bg-1)] px-4 py-3"><div className="label mb-1">FLV (forced)</div><div className="mono text-xl text-[var(--muted)] num">{fmtM(lq)}</div><div className="text-[10px] text-[var(--dim)] num mt-0.5">62% of FMV</div></div>
+          <div className="bg-[var(--bg-1)] px-4 py-3"><div className="label mb-1">Loan Balance</div><div className="mono text-xl text-[var(--text)] num">{fmtM(asset.loanBalance)}</div><div className="text-[10px] text-[var(--dim)] num mt-0.5">orig adv {fmtM(asset.originAdvance)}</div></div>
+          <div className="bg-[var(--bg-1)] px-4 py-3"><div className="label mb-1">LTV</div><div className="mono text-xl num" style={{ color: r > 0.85 ? 'var(--red)' : r > 0.70 ? 'var(--amber)' : 'var(--green)' }}>{pct(r)}</div><div className="text-[10px] text-[var(--dim)] num mt-0.5">policy ≤ 70%</div></div>
+          <div className="bg-[var(--bg-1)] px-4 py-3"><div className="label mb-1">Health Index</div><div className="mono text-xl num" style={{ color: h >= 70 ? 'var(--green)' : h >= 50 ? 'var(--amber)' : 'var(--red)' }}>{h}</div><div className="text-[10px] text-[var(--dim)] mt-0.5">age + utilization</div></div>
         </div>
-
-        {/* Valuation chart */}
         <div className="border-b border-[var(--border)] p-4">
           <div className="label mb-3 text-[var(--amber)]">▸ VALUATION HISTORY · 24M</div>
-          <div className="h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={history} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                <CartesianGrid stroke="#1f2937" strokeDasharray="2 4" vertical={false} />
-                <XAxis dataKey="month" stroke="#6b7785" tick={{ fontSize: 9, fontFamily: 'IBM Plex Mono' }} interval={3} />
-                <YAxis stroke="#6b7785" tick={{ fontSize: 9, fontFamily: 'IBM Plex Mono' }} tickFormatter={(v) => `$${(v/1000).toFixed(0)}K`} />
-                <Tooltip
-                  contentStyle={{ background: '#0f1419', border: '1px solid #2a3441', fontFamily: 'IBM Plex Mono', fontSize: 10 }}
-                  labelStyle={{ color: '#ffb000' }}
-                  formatter={(v, name) => [fmt(v), name.toUpperCase()]}
-                />
-                <Line type="monotone" dataKey="fmv" stroke="#ffb000" strokeWidth={1.5} dot={false} name="FMV" />
-                <Line type="monotone" dataKey="olv" stroke="#94a3b8" strokeWidth={1} dot={false} name="OLV" strokeDasharray="3 3" />
-                <Line type="monotone" dataKey="loan" stroke="#4d9fff" strokeWidth={1.5} dot={false} name="LOAN" />
-              </LineChart>
-            </ResponsiveContainer>
+          <div style={{ height: 200 }}>
+            <LineChart data={history} keys={[
+              { key: 'fmv', color: '#ffb000', width: 1.5 },
+              { key: 'olv', color: '#94a3b8', width: 1, dash: '3 3' },
+              { key: 'loan', color: '#4d9fff', width: 1.5 },
+            ]} height={200} width={580} />
+          </div>
+          <div className="flex gap-4 mt-2 text-[10px]">
+            <span className="flex items-center gap-1.5"><span className="w-2 h-0.5 bg-[var(--amber)]"></span><span className="text-[var(--dim)]">FMV</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-0.5 bg-[var(--muted)]"></span><span className="text-[var(--dim)]">OLV</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-0.5 bg-[var(--blue)]"></span><span className="text-[var(--dim)]">LOAN</span></span>
           </div>
         </div>
-
-        {/* Borrower */}
         <div className="border-b border-[var(--border)] p-4">
           <div className="label mb-3 text-[var(--amber)]">▸ OBLIGOR</div>
           <div className="grid grid-cols-2 gap-y-2 text-[11px]">
-            <div className="text-[var(--dim)]">Borrower</div>
-            <div className="text-[var(--text)]">{asset.borrower}</div>
-            <div className="text-[var(--dim)]">Location</div>
-            <div className="text-[var(--text)]">{asset.location}</div>
-            <div className="text-[var(--dim)]">Serial / VIN</div>
-            <div className="text-[var(--text)] num">{asset.vin || asset.serial}</div>
-            <div className="text-[var(--dim)]">OFAC Screen</div>
-            <div className="text-[var(--green)]">✓ CLEAR · {new Date().toLocaleDateString()}</div>
-            <div className="text-[var(--dim)]">UCC Filing</div>
-            <div className="text-[var(--text)] num">FL-{Math.floor(Math.random() * 90000000 + 10000000)}</div>
+            <div className="text-[var(--dim)]">Borrower</div><div className="text-[var(--text)]">{asset.borrower}</div>
+            <div className="text-[var(--dim)]">Location</div><div className="text-[var(--text)]">{asset.location}</div>
+            <div className="text-[var(--dim)]">Serial / VIN</div><div className="text-[var(--text)] num">{asset.vin || asset.serial}</div>
+            <div className="text-[var(--dim)]">OFAC Screen</div><div className="text-[var(--green)]">✓ CLEAR · {new Date().toLocaleDateString()}</div>
+            <div className="text-[var(--dim)]">UCC Filing</div><div className="text-[var(--text)] num">FL-{Math.floor(Math.random() * 90000000 + 10000000)}</div>
           </div>
         </div>
-
-        {/* LIVE NHTSA INTEGRATION */}
         {asset.vin && (
           <div className="border-b border-[var(--border)] p-4">
             <div className="flex items-center justify-between mb-3">
               <span className="label text-[var(--amber)]">▸ NHTSA vPIC · LIVE DECODE</span>
-              <button
-                onClick={decodeVIN}
-                disabled={vinLoading}
-                className="text-[10px] tracking-wider px-2.5 py-1 border border-[var(--amber)] text-[var(--amber)] hover:bg-[var(--amber)] hover:text-[var(--bg)] transition disabled:opacity-50">
+              <button onClick={decodeVIN} disabled={vinLoading} className="text-[10px] tracking-wider px-2.5 py-1 border border-[var(--amber)] text-[var(--amber)] hover:bg-[var(--amber)] hover:text-[var(--bg)] transition disabled:opacity-50">
                 {vinLoading ? 'QUERYING...' : 'DECODE VIN →'}
               </button>
             </div>
             {!vinData && !vinLoading && !vinError && (
-              <div className="text-[11px] text-[var(--dim)]">
-                Click DECODE VIN to query the public NHTSA vPIC API in real time.
-                <div className="num text-[var(--muted)] mt-1">VIN: {asset.vin}</div>
-              </div>
+              <div className="text-[11px] text-[var(--dim)]">Click DECODE VIN to query the public NHTSA vPIC API in real time.<div className="num text-[var(--muted)] mt-1">VIN: {asset.vin}</div></div>
             )}
-            {vinLoading && (
-              <div className="text-[11px] text-[var(--amber)] blink">▸ querying vpic.nhtsa.dot.gov ...</div>
-            )}
-            {vinError && (
-              <div className="text-[11px] text-[var(--red)]">⚠ {vinError}</div>
-            )}
+            {vinLoading && <div className="text-[11px] text-[var(--amber)] blink">▸ querying vpic.nhtsa.dot.gov ...</div>}
+            {vinError && <div className="text-[11px] text-[var(--red)]">⚠ {vinError}</div>}
             {vinData && (
               <div className="grid grid-cols-2 gap-y-1.5 text-[11px] flicker">
                 {Object.entries(vinData).map(([k, v]) => (
@@ -672,15 +524,11 @@ function AssetDrawer({ asset, onClose }) {
                     <div className="text-[var(--green)]">{v}</div>
                   </React.Fragment>
                 ))}
-                <div className="col-span-2 mt-2 pt-2 border-t border-[var(--border)] text-[9px] text-[var(--dim)] tracking-wider">
-                  ✓ VERIFIED VIA NHTSA vPIC · {new Date().toUTCString()}
-                </div>
+                <div className="col-span-2 mt-2 pt-2 border-t border-[var(--border)] text-[9px] text-[var(--dim)] tracking-wider">✓ VERIFIED VIA NHTSA vPIC · {new Date().toUTCString()}</div>
               </div>
             )}
           </div>
         )}
-
-        {/* Actions */}
         <div className="p-4 flex gap-2">
           <button className="flex-1 text-[10px] tracking-wider py-2 border border-[var(--border-2)] text-[var(--muted)] hover:border-[var(--amber)] hover:text-[var(--amber)] transition">EXPORT PDF APPRAISAL</button>
           <button className="flex-1 text-[10px] tracking-wider py-2 border border-[var(--border-2)] text-[var(--muted)] hover:border-[var(--amber)] hover:text-[var(--amber)] transition">REQUEST FIELD INSPECTION</button>
@@ -694,37 +542,20 @@ function App() {
   const [now, setNow] = useState(new Date());
   const [selected, setSelected] = useState(null);
   const [filter, setFilter] = useState('all');
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
+  useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
   return (
     <div className="min-h-screen relative">
       <Header now={now} />
-
       <div className="relative z-10 p-4 space-y-4">
         <PortfolioStrip assets={FLEET} />
-
         <div className="grid grid-cols-3 gap-4">
-          <div className="col-span-2">
-            <PortfolioChart assets={FLEET} />
-          </div>
-          <div>
-            <MacroPanel />
-          </div>
+          <div className="col-span-2"><PortfolioChart assets={FLEET} /></div>
+          <div><MacroPanel /></div>
         </div>
-
         <div className="grid grid-cols-3 gap-4">
-          <div className="col-span-2">
-            <FleetTable assets={FLEET} onSelect={setSelected} filter={filter} setFilter={setFilter} />
-          </div>
-          <div>
-            <AlertsPanel assets={FLEET} />
-          </div>
+          <div className="col-span-2"><FleetTable assets={FLEET} onSelect={setSelected} filter={filter} setFilter={setFilter} /></div>
+          <div><AlertsPanel assets={FLEET} /></div>
         </div>
-
         <div className="grid-card px-4 py-3 flex items-center justify-between text-[10px]">
           <div className="flex gap-6 text-[var(--dim)]">
             <span><span className="text-[var(--green)]">●</span> NHTSA vPIC <span className="text-[var(--green)]">CONNECTED</span></span>
@@ -736,7 +567,6 @@ function App() {
           <div className="text-[var(--dim)] num">VALTRAX · v0.1.0-demo · {new Date().toISOString().split('T')[0]}</div>
         </div>
       </div>
-
       <AssetDrawer asset={selected} onClose={() => setSelected(null)} />
     </div>
   );
