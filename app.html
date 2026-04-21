@@ -963,10 +963,10 @@ function AssetDrawer({ asset, onClose }) {
   const [vinData, setVinData] = useState(null);
   const [vinLoading, setVinLoading] = useState(false);
   const [vinError, setVinError] = useState(null);
+  const history = useMemo(() => asset ? valuationHistory(asset) : [], [asset]);
   if (!asset) return null;
   const fmv = depreciate(asset.originalCost, asset.year, asset.hours, asset.type);
   const cv = olv(fmv); const lq = flv(fmv); const r = ltv(asset); const h = healthScore(asset); const lvl = alertLevel(asset);
-  const history = useMemo(() => valuationHistory(asset), [asset]);
   const assetComps = compsFor(asset);
 
   async function decodeVIN() {
