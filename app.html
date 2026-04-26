@@ -67,7 +67,7 @@
 </head>
 <body>
 <div id="root"></div>
-
+<script src="./data.js"></script>
 <script type="text/babel">
 const { useState, useEffect, useMemo, useRef } = React;
 
@@ -975,13 +975,74 @@ function CovenantsPage({ onSelect }) {
 }
 
 // =================== GROVE PAGE ===================
-function GroveFleetTable({ assets }) {
+function GroveFleetTable({ assets, onSelect }) {
+  const [search, setSearch] = useState('');
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return assets;
+    return assets.filter(a => `${a.make || ''} ${a.model || ''} ${a.borrower || ''} ${a.location || ''}`.toLowerCase().includes(q));
+  }, [assets, search]);
+
   return (
-    <div className="grid-card p-12 text-center fade-up">
-      <div className="label mb-2 text-[var(--amber)]">▸ GROVE · FLEET</div>
-      <div className="mono text-2xl font-light mb-2">Coming soon</div>
-      <div className="text-[12px] text-[var(--muted)]">
-        Commercial espresso fleet table scaffolded. <span className="num">{assets.length}</span> records detected in <span className="text-[var(--amber)]">window.GROVE_FLEET</span>.
+    <div className="grid-card">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
+        <div className="flex items-center gap-3">
+          <span className="label text-[var(--amber)]">▸ GROVE FLEET</span>
+          <span className="text-[10px] text-[var(--dim)] num">{filtered.length}/{assets.length} ASSETS</span>
+        </div>
+      </div>
+      <div className="px-4 py-3 border-b border-[var(--border)]">
+        <div className="label mb-1.5">SEARCH</div>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="brand, model, borrower, location..."
+          className="w-full bg-[var(--bg)] border border-[var(--border-2)] px-3 py-2 text-[12px] text-[var(--text)] outline-none focus:border-[var(--amber)] mono"
+        />
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-[12px]">
+          <thead><tr className="border-b border-[var(--border)] text-left">
+            {['ASSET ID', 'BRAND / MODEL', 'CONFIG', 'YEAR', 'BORROWER', 'LOCATION', 'MSRP', 'LOAN BALANCE', 'CONDITION', 'SOURCE'].map(h => (
+              <th key={h} className="label px-4 py-2.5 font-medium">{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {assets.length === 0 && (
+              <tr>
+                <td colSpan="10" className="px-4 py-12 text-center text-[var(--dim)]">No assets indexed</td>
+              </tr>
+            )}
+            {assets.length > 0 && filtered.length === 0 && (
+              <tr>
+                <td colSpan="10" className="px-4 py-12 text-center text-[var(--dim)]">No assets match search</td>
+              </tr>
+            )}
+            {filtered.map(a => {
+              const source = (a.dataSource || 'modeled').toLowerCase();
+              const sourceClass = source === 'verified'
+                ? 'bg-[var(--bg-2)] text-[var(--green)]'
+                : source === 'listing'
+                ? 'bg-[var(--bg-2)] text-[var(--blue)]'
+                : 'bg-[var(--bg-2)] text-[var(--amber)]';
+              return (
+                <tr key={a.id} onClick={() => onSelect && onSelect(a)} className="row-hover border-b border-[var(--border)] cursor-pointer">
+                  <td className="px-4 py-2.5 num text-[var(--amber)]">{a.id}</td>
+                  <td className="px-4 py-2.5"><span className="text-[var(--text)]">{a.make}</span> <span className="text-[var(--dim)]">{a.model}</span></td>
+                  <td className="px-4 py-2.5 text-[var(--muted)] text-[11px]">{a.configuration || '—'}</td>
+                  <td className="px-4 py-2.5 num text-[var(--muted)]">{a.year}</td>
+                  <td className="px-4 py-2.5 text-[var(--muted)] text-[11px]">{a.borrower}</td>
+                  <td className="px-4 py-2.5 text-[var(--muted)] text-[11px]">{a.location}</td>
+                  <td className="px-4 py-2.5 num text-[var(--text)]">{a.originalCost != null ? fmt(a.originalCost) : '—'}</td>
+                  <td className="px-4 py-2.5 num text-[var(--muted)]">{a.loanBalance != null ? fmt(a.loanBalance) : '—'}</td>
+                  <td className="px-4 py-2.5 text-[var(--muted)] text-[11px]">{a.conditionRating || '—'}</td>
+                  <td className="px-4 py-2.5"><span className={`text-[9px] tracking-wider px-1.5 py-0.5 ${sourceClass}`}>{source.toUpperCase()}</span></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -1008,7 +1069,7 @@ function GroveAtlas() {
     </div>
   );
 }
-function GrovePage() {
+function GrovePage({ onSelect }) {
   const [subRoute, setSubRoute] = useState('fleet');
   const GROVE_FLEET = window.GROVE_FLEET || [];
   const GROVE_COMPS = window.GROVE_COMPS || [];
@@ -1038,7 +1099,7 @@ function GrovePage() {
         </nav>
         <div className="text-[10px] text-[var(--dim)] num">FLEET {GROVE_FLEET.length} · COMPS {GROVE_COMPS.length}</div>
       </div>
-      {subRoute === 'fleet' && <GroveFleetTable assets={GROVE_FLEET} />}
+      {subRoute === 'fleet' && <GroveFleetTable assets={GROVE_FLEET} onSelect={onSelect} />}
       {subRoute === 'comps' && <GroveCompsPage comps={GROVE_COMPS} />}
       {subRoute === 'atlas' && <GroveAtlas />}
     </div>
@@ -1204,7 +1265,7 @@ function App() {
       <Header now={now} route={route} setRoute={setRoute} onLogout={logout} />
       <div className="relative z-10 p-4">
         {route === 'portfolio' && <PortfolioPage onSelect={setSelected} />}
-        {route === 'grove' && <GrovePage />}
+        {route === 'grove' && <GrovePage onSelect={setSelected} />}
         {route === 'watchlist' && <WatchlistPage onSelect={setSelected} />}
         {route === 'comps' && <CompsPage />}
         {route === 'covenants' && <CovenantsPage onSelect={setSelected} />}
