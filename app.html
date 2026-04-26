@@ -282,6 +282,7 @@ function Header({ now, route, setRoute, onLogout }) {
     { k: 'comps', l: 'Comps' },
     { k: 'covenants', l: 'Covenants' },
     { k: 'reports', l: 'Reports' },
+    { k: 'grove', l: 'Grove' },
   ];
   return (
     <div className="border-b border-[var(--border)] bg-[var(--bg-1)] relative z-10">
@@ -371,12 +372,27 @@ function PortfolioStrip({ assets }) {
   );
 }
 function FleetTable({ assets, onSelect, filter, setFilter }) {
+  const types = [
+    { key: 'all', label: 'All' },
+    { key: 'alerts', label: 'Alerts' },
+    { key: 'Traditional Espresso', label: 'Traditional Espresso' },
+    { key: 'Super-Automatic', label: 'Super-Automatic' },
+    { key: 'Specialty Modulating', label: 'Specialty / Modulating' },
+    { key: 'Grinder', label: 'Grinders' },
+  ];
+
   const filtered = useMemo(() => {
     if (filter === 'all') return assets;
-    if (filter === 'alerts') return assets.filter(a => alertLevel(a) !== 'ok');
-    return assets.filter(a => a.type.toLowerCase() === filter);
+    if (filter === 'alerts') {
+      return assets.filter(a => {
+        const hasRiskFlags = Array.isArray(a.riskFlags) && a.riskFlags.length > 0;
+        const riskAlert = typeof a.riskAlertLevel === 'string' ? a.riskAlertLevel.toLowerCase().trim() : '';
+        const hasRiskAlert = riskAlert !== '' && riskAlert !== 'ok';
+        return hasRiskFlags || hasRiskAlert;
+      });
+    }
+    return assets.filter(a => a.type === filter);
   }, [assets, filter]);
-  const types = ['all', 'alerts', 'excavator', 'truck', 'skid steer', 'bulldozer', 'wheel loader', 'crane', 'forklift'];
   return (
     <div className="grid-card">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
@@ -386,7 +402,7 @@ function FleetTable({ assets, onSelect, filter, setFilter }) {
         </div>
         <div className="flex gap-px text-[10px]">
           {types.map(t => (
-            <button key={t} onClick={() => setFilter(t)} className={`px-2.5 py-1 uppercase tracking-wider ${filter === t ? 'bg-[var(--amber)] text-[var(--bg)]' : 'bg-[var(--bg-2)] text-[var(--dim)] hover:text-[var(--text)]'}`}>{t}</button>
+            <button key={t.key} onClick={() => setFilter(t.key)} className={`px-2.5 py-1 uppercase tracking-wider ${filter === t.key ? 'bg-[var(--amber)] text-[var(--bg)]' : 'bg-[var(--bg-2)] text-[var(--dim)] hover:text-[var(--text)]'}`}>{t.label}</button>
           ))}
         </div>
       </div>
@@ -958,6 +974,77 @@ function CovenantsPage({ onSelect }) {
   );
 }
 
+// =================== GROVE PAGE ===================
+function GroveFleetTable({ assets }) {
+  return (
+    <div className="grid-card p-12 text-center fade-up">
+      <div className="label mb-2 text-[var(--amber)]">▸ GROVE · FLEET</div>
+      <div className="mono text-2xl font-light mb-2">Coming soon</div>
+      <div className="text-[12px] text-[var(--muted)]">
+        Commercial espresso fleet table scaffolded. <span className="num">{assets.length}</span> records detected in <span className="text-[var(--amber)]">window.GROVE_FLEET</span>.
+      </div>
+    </div>
+  );
+}
+function GroveCompsPage({ comps }) {
+  return (
+    <div className="grid-card p-12 text-center fade-up">
+      <div className="label mb-2 text-[var(--amber)]">▸ GROVE · COMPS</div>
+      <div className="mono text-2xl font-light mb-2">Coming soon</div>
+      <div className="text-[12px] text-[var(--muted)]">
+        Espresso machine comps module scaffolded. <span className="num">{comps.length}</span> records detected in <span className="text-[var(--amber)]">window.GROVE_COMPS</span>.
+      </div>
+    </div>
+  );
+}
+function GroveAtlas() {
+  return (
+    <div className="grid-card p-12 text-center fade-up">
+      <div className="label mb-2 text-[var(--amber)]">▸ GROVE · ATLAS</div>
+      <div className="mono text-2xl font-light mb-2">Coming soon</div>
+      <div className="text-[12px] text-[var(--muted)]">
+        Coffee machine reference and model intelligence workspace scaffolded.
+      </div>
+    </div>
+  );
+}
+function GrovePage() {
+  const [subRoute, setSubRoute] = useState('fleet');
+  const GROVE_FLEET = window.GROVE_FLEET || [];
+  const GROVE_COMPS = window.GROVE_COMPS || [];
+
+  const tabs = [
+    { k: 'fleet', l: 'Fleet' },
+    { k: 'comps', l: 'Comps' },
+    { k: 'atlas', l: 'Atlas' },
+  ];
+
+  return (
+    <div className="space-y-4 fade-up">
+      <div className="grid-card p-6">
+        <div className="label mb-2 text-[var(--amber)]">▸ GROVE ASSET</div>
+        <h1 className="mono text-3xl font-light">Coffee Collateral Workspace</h1>
+        <div className="text-[12px] text-[var(--muted)] mt-2 max-w-3xl">
+          Dedicated workspace for financed espresso machines, market comps, and machine reference data.
+        </div>
+      </div>
+      <div className="grid-card px-6 py-3 flex items-center justify-between">
+        <nav className="flex items-center gap-5 text-[10px] tracking-[0.15em] uppercase">
+          {tabs.map(t => (
+            <a key={t.k} onClick={() => setSubRoute(t.k)} className={`cursor-pointer pb-0.5 ${subRoute === t.k ? 'text-[var(--amber)] border-b border-[var(--amber)]' : 'text-[var(--dim)] hover:text-[var(--text)]'}`}>
+              {t.l}
+            </a>
+          ))}
+        </nav>
+        <div className="text-[10px] text-[var(--dim)] num">FLEET {GROVE_FLEET.length} · COMPS {GROVE_COMPS.length}</div>
+      </div>
+      {subRoute === 'fleet' && <GroveFleetTable assets={GROVE_FLEET} />}
+      {subRoute === 'comps' && <GroveCompsPage comps={GROVE_COMPS} />}
+      {subRoute === 'atlas' && <GroveAtlas />}
+    </div>
+  );
+}
+
 // =================== ASSET DRAWER ===================
 function AssetDrawer({ asset, onClose }) {
   const [vinData, setVinData] = useState(null);
@@ -1117,6 +1204,7 @@ function App() {
       <Header now={now} route={route} setRoute={setRoute} onLogout={logout} />
       <div className="relative z-10 p-4">
         {route === 'portfolio' && <PortfolioPage onSelect={setSelected} />}
+        {route === 'grove' && <GrovePage />}
         {route === 'watchlist' && <WatchlistPage onSelect={setSelected} />}
         {route === 'comps' && <CompsPage />}
         {route === 'covenants' && <CovenantsPage onSelect={setSelected} />}
