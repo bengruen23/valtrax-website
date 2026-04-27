@@ -1097,16 +1097,15 @@ function GrovePage({ onSelect }) {
           Dedicated workspace for financed espresso machines, market comps, and machine reference data.
         </div>
       </div>
-      <div style={{ width: '100%', padding: 0, margin: 0, textAlign: 'center' }}>
+      <div style={{ width: '100%', padding: 0, margin: 0, marginBottom: 0, textAlign: 'center' }}>
         <div style={{ position: 'relative', maxWidth: 800, width: '100%', margin: '0 auto', padding: 0 }}>
           <div style={{ position: 'relative', overflow: 'hidden' }}>
             <img src="./espressomachine3.png" alt="Grove espresso machine" className="grove-hero-float" style={{ display: 'block', width: '100%', maxWidth: 800, margin: '0 auto' }} />
             <div className="grove-hero-scan" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, pointerEvents: 'none', background: 'rgba(74, 234, 255, 0.4)', boxShadow: '0 0 20px 0 rgba(74, 234, 255, 0.4)' }}></div>
           </div>
-          <img src="./espressomachine3.png" alt="" aria-hidden="true" style={{ display: 'block', width: '100%', maxWidth: 800, margin: '0 auto', transform: 'scaleY(-1)', opacity: 0.08, WebkitMaskImage: 'linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%)', maskImage: 'linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%)', pointerEvents: 'none' }} />
         </div>
       </div>
-      <div className="grid-card px-6 py-3 flex items-center justify-between" style={{ marginTop: 12 }}>
+      <div className="grid-card px-6 py-3 flex items-center justify-between" style={{ marginTop: 0 }}>
         <nav className="flex items-center gap-5 text-[10px] tracking-[0.15em] uppercase">
           {tabs.map(t => (
             <a key={t.k} onClick={() => setSubRoute(t.k)} className={`cursor-pointer pb-0.5 ${subRoute === t.k ? 'text-[var(--amber)] border-b border-[var(--amber)]' : 'text-[var(--dim)] hover:text-[var(--text)]'}`}>
