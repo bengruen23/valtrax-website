@@ -1,5 +1,3 @@
-// GROVE_BRAND_LOGOS — maps brand names to manufacturer domains for logo.dev
-// Usage: <img src={`https://img.logo.dev/${GROVE_BRAND_LOGOS[brand]}?token=pk_free&size=60`} />
 window.GROVE_BRAND_LOGOS = {
   "Ascaso": "ascaso.com",
   "Astoria": "astoria.com",
