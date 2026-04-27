@@ -1146,7 +1146,7 @@ function AssetDrawer({ asset, onClose }) {
               <span className="num text-[var(--amber)] text-[12px] tracking-wider">{asset.id}</span>
               <span className="label">{asset.type}</span>
             </div>
-            <h2 className="mono text-2xl font-light flicker">{asset.make} <span className="text-[var(--muted)]">{asset.model}</span></h2>
+            <h2 className="mono text-2xl font-light flicker"><img src={'https://www.google.com/s2/favicons?sz=64&domain=' + ((window.GROVE_BRAND_LOGOS || {})[asset.make] || 'example.com')} alt={asset.make} style={{width: 32, height: 32, objectFit: 'contain', marginRight: 10, verticalAlign: 'middle'}} onError={(e) => { e.target.style.display = 'none' }} />{asset.make} <span className="text-[var(--muted)]">{asset.model}</span></h2>
             <div className="text-[11px] text-[var(--dim)] mt-1 num">{asset.year} · {asset.hours ? `${asset.hours.toLocaleString()} hrs` : 'on-road'} · {asset.location}</div>
           </div>
           <button onClick={onClose} className="text-[var(--dim)] hover:text-[var(--amber)] text-xl leading-none">×</button>
