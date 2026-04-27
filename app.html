@@ -57,6 +57,10 @@
   }
   @keyframes scan { 0% { background-position: 0 0; } 100% { background-position: 0 100vh; } }
   .scan-anim { animation: scan 8s linear infinite; }
+  @keyframes grove-hero-float { 0%, 100% { transform: translateY(-5px); } 50% { transform: translateY(5px); } }
+  .grove-hero-float { animation: grove-hero-float 4s ease-in-out infinite; }
+  @keyframes grove-hero-scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
+  .grove-hero-scan { animation: grove-hero-scan 3s linear infinite; }
   input.term {
     background: transparent; border: none; outline: none;
     font-family: 'IBM Plex Mono', monospace; color: var(--amber);
@@ -1091,6 +1095,15 @@ function GrovePage({ onSelect }) {
         <h1 className="mono text-3xl font-light">Coffee Collateral Workspace</h1>
         <div className="text-[12px] text-[var(--muted)] mt-2 max-w-3xl">
           Dedicated workspace for financed espresso machines, market comps, and machine reference data.
+        </div>
+      </div>
+      <div style={{ width: '100%', padding: 0, textAlign: 'center' }}>
+        <div style={{ position: 'relative', maxWidth: 800, width: '100%', margin: '0 auto' }}>
+          <div style={{ position: 'relative', overflow: 'hidden' }}>
+            <img src="./grove-hero.png" alt="Grove espresso machine" className="grove-hero-float" style={{ display: 'block', width: '100%', maxWidth: 800, margin: '0 auto' }} />
+            <div className="grove-hero-scan" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '40%', pointerEvents: 'none', background: 'linear-gradient(180deg, transparent 0%, rgba(255, 176, 0, 0.10) 50%, transparent 100%)' }}></div>
+          </div>
+          <img src="./grove-hero.png" alt="" aria-hidden="true" style={{ display: 'block', width: '100%', maxWidth: 800, margin: '0 auto', transform: 'scaleY(-1)', opacity: 0.08, WebkitMaskImage: 'linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%)', maskImage: 'linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%)', pointerEvents: 'none' }} />
         </div>
       </div>
       <div className="grid-card px-6 py-3 flex items-center justify-between">
