@@ -80,7 +80,7 @@
 <ellipse cx="100" cy="245" rx="70" ry="8" fill="#4AEAFF" fill-opacity=".02" stroke="#4AEAFF" stroke-width=".2" opacity=".4"/>
 
 <text x="100" y="270" class="tx">ESPRESSO</text>
-<text x="100" y="282" class="txd" text-anchor="middle" class="p">GROVE ASSET · LEFT</text>
+<text x="100" y="282" class="txd p" text-anchor="middle">GROVE ASSET · LEFT</text>
 
 <text x="18" y="80" class="txd">PWR 4.2kW</text>
 <text x="18" y="90" class="txd">BOILER: IND</text>
