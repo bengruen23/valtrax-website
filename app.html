@@ -10,7 +10,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
 <style>
   :root {
     --bg: #0a0e14; --bg-1: #0f1419; --bg-2: #151b23;
@@ -75,6 +75,7 @@
 <script src="./data.js"></script>
 <script src="./grove-logos.js"></script>
 <script type="text/babel" data-presets="env,react">
+/** @jsxRuntime classic */
 const { useState, useEffect, useMemo, useRef } = React;
 
 // =================== DATA ===================
